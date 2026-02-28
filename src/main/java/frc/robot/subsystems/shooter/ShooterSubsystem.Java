@@ -5,7 +5,7 @@
 // 1 para hood (la que ajusta en angulo de tiro)
 // Este usa un ecoder absoluto como referencia.
 
-// 2 para feeder. No conviene separarlos por mecanismo 
+// 2 para indexer. No conviene separarlos por mecanismo 
 // por que el feeder del shooter y el qe tenemos en el piso 
 // se activan al mismo tiempo y tendriamos un subystema extra 
 // sin mucho sentido.
@@ -20,3 +20,9 @@
 
 // final ajustar disparo recibiendo distancia.
 // feedear
+
+//feeder config
+
+
+//move feeder
+// moter.set()
