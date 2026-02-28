@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.subsystems.drive.SwerveSubsystem;
+import frc.robot.subsystems.intake.IntakeSubsystem;
 
 public class RobotContainer {
 
@@ -22,6 +23,7 @@ public class RobotContainer {
 
 	// Subsystems
 	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
+	private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
 
 	// Autonomous
 	private SendableChooser<Command> m_autoChooser;
@@ -49,6 +51,21 @@ public class RobotContainer {
 		);
 
 		// Operator Controller
+		// Intake test buttons (driver controller)
+		m_driverController.square()
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setRoller(1.0), m_intakeSubsystem))
+			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem));
+
+		m_driverController.cross()
+			.onTrue(Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem));
+
+		m_driverController.triangle()
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(0.4), m_intakeSubsystem))
+			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
+
+		m_driverController.circle()
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-1.0), m_intakeSubsystem))
+			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
 		
 	}
 
@@ -75,6 +92,7 @@ public class RobotContainer {
 	public Runnable dashboardLoop() {
 		return () -> {
 			m_swerveSubsystem.updateDashboard();
+			m_intakeSubsystem.updateDashboard();
 		};
 	}
 }
