@@ -12,8 +12,10 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
+import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 
 public class RobotContainer {
@@ -34,6 +36,11 @@ public class RobotContainer {
 	public RobotContainer() {
 		NamedCommands.registerCommand("nothing", Commands.sequence(
 		));
+		// Autonomous event markers: explicit field-based aiming helpers.
+		NamedCommands.registerCommand("AimSpeakerOn", m_swerveSubsystem.enableAutoAimAtPoint(kLookAtPoint));
+		NamedCommands.registerCommand("AimSpeakerOff", m_swerveSubsystem.disableAutoAim());
+		NamedCommands.registerCommand("AimForwardOn", m_swerveSubsystem.enableAutoAimAtAngle(Rotation2d.fromDegrees(0.0)));
+		NamedCommands.registerCommand("AimForwardOff", m_swerveSubsystem.disableAutoAim());
 		
 		configureBindings();
 
@@ -53,6 +60,7 @@ public class RobotContainer {
 			() -> dPadYFromPov(m_driverController.getHID().getPOV())
 		);
 
+		// Teleop convenience wrappers (driver intent first):
 		// While holding L1, override omega to hold heading at 0 deg.
 		m_driverController.L1().whileTrue(Commands.run(() -> {
 			m_swerveSubsystem.setUseFixedOmega(true);
@@ -97,6 +105,16 @@ public class RobotContainer {
 
 	public Command getAutonomousCommand() {
 		return m_autoChooser.getSelected();
+	}
+
+	public void onAutonomousInit() {
+		m_swerveSubsystem.disableAutoAimNow();
+		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.AUTO));
+	}
+
+	public void onTeleopInit() {
+		m_swerveSubsystem.disableAutoAimNow();
+		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.IDLE));
 	}
 
 	public Runnable dashboardLoop() {
