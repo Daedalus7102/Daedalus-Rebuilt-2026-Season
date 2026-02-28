@@ -60,12 +60,16 @@ public class RobotContainer {
 			.onTrue(Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem));
 
 		m_driverController.triangle()
-			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(0.4), m_intakeSubsystem))
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-0.4), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
 
 		m_driverController.circle()
-			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-1.0), m_intakeSubsystem))
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(1.0), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
+
+		// Zero intake pivot relative encoder at current physical "in" position
+		m_driverController.options()
+			.onTrue(Commands.runOnce(m_intakeSubsystem::zeroPivotAtInPosition, m_intakeSubsystem));
 		
 	}
 
