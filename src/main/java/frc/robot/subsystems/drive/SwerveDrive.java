@@ -8,9 +8,11 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -83,8 +85,11 @@ public class SwerveDrive {
     private final Field2d m_field = new Field2d();
     private DoubleSupplier m_translationX = () -> 0.0, m_translationY = () -> 0.0, m_rotationOmega = () -> 0.0;
     private DoubleSupplier m_padX = () -> 0.0, m_padY = () -> 0.0;
+    private DoubleSupplier m_fixedOmegaSupplier = null;
     private double m_deadband = 0.1d;
     private boolean m_fieldRelativeTeleop = true;
+    private boolean m_useFixedOmega = false;
+    private final PIDController m_headingController = new PIDController(4.0, 0.0, 0.1);
 
     private static final double kLoopPeriodSeconds = 0.02;
     private static final double kDPadDriveScale = 0.3;
@@ -99,6 +104,7 @@ public class SwerveDrive {
     public SwerveDrive(Subsystem requirements) {
         m_requirements = requirements;
         m_gyro.reset();
+        m_headingController.enableContinuousInput(-Math.PI, Math.PI);
 
         SmartDashboard.putData("Field", m_field);
         SmartDashboard.putBoolean("FieldRelativeTeleop", m_fieldRelativeTeleop);
@@ -229,7 +235,10 @@ public class SwerveDrive {
     }
 
     private boolean isJoystickInputPresent() {
-        return m_joystickX != 0.0 || m_joystickY != 0.0 || m_joystickOmega != 0.0;
+        return m_joystickX != 0.0
+                || m_joystickY != 0.0
+                || m_joystickOmega != 0.0
+                || (m_useFixedOmega && m_fixedOmegaSupplier != null);
     }
 
     private boolean isDPadInputPresent() {
@@ -257,6 +266,14 @@ public class SwerveDrive {
         double x = m_joystickX * SwerveConstants.kDriveMaxSpeed;
         double y = m_joystickY * SwerveConstants.kDriveMaxSpeed;
         double omega = m_joystickOmega * SwerveConstants.kTurnMaxSpeed;
+
+        if (m_useFixedOmega && m_fixedOmegaSupplier != null) {
+            omega = MathUtil.clamp(
+                    m_fixedOmegaSupplier.getAsDouble(),
+                    -SwerveConstants.kTurnMaxSpeed,
+                    SwerveConstants.kTurnMaxSpeed);
+        }
+
         setSwerveModuleStates(drive(x, y, omega, m_fieldRelativeTeleop, kLoopPeriodSeconds));
     }
     
@@ -313,6 +330,51 @@ public class SwerveDrive {
     public void driveRobotRelative(ChassisSpeeds chassisSpeeds) {
         m_idleApplied = false;
         setSwerveModuleStates(chassisSpeeds);
+    }
+
+    /** Use joystick omega when false, fixed-omega supplier when true. */
+    public void setUseFixedOmega(boolean useFixedOmega) {
+        m_useFixedOmega = useFixedOmega;
+        if (!useFixedOmega) {
+            m_fixedOmegaSupplier = null;
+            m_headingController.reset();
+        }
+    }
+
+    /**
+     * Select heading lock target. This only sets the omega override supplier.
+     * Enabling/disabling usage is controlled by setUseFixedOmega(...).
+     */
+    public void driveFacingAngle(Rotation2d targetHeading) {
+        final Rotation2d targetFieldHeading = m_fieldRelativeTeleop
+                ? targetHeading
+                : m_cachedRotation.plus(targetHeading);
+
+        m_fixedOmegaSupplier = () -> calculateHeadingOmega(targetFieldHeading);
+    }
+
+    /**
+     * Select look-at-point target. Reuses driveFacingAngle(...).
+     */
+    public void driveFacingPoint(Translation2d targetPoint) {
+        Rotation2d targetFieldHeading = calculateTargetFieldHeading(targetPoint);
+        Rotation2d headingInput = m_fieldRelativeTeleop
+                ? targetFieldHeading
+                : targetFieldHeading.minus(m_cachedRotation);
+
+        driveFacingAngle(headingInput);
+    }
+
+    private double calculateHeadingOmega(Rotation2d targetFieldHeading) {
+        return m_headingController.calculate(m_cachedRotation.getRadians(), targetFieldHeading.getRadians());
+    }
+
+    private Rotation2d calculateTargetFieldHeading(Translation2d targetPoint) {
+        Translation2d delta = targetPoint.minus(getPose().getTranslation());
+        if (delta.getNorm() <= 1e-4) {
+            return m_cachedRotation;
+        }
+        return new Rotation2d(Math.atan2(delta.getY(), delta.getX()));
     }
 
     

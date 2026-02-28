@@ -3,6 +3,8 @@ package frc.robot.subsystems.drive;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -49,5 +51,17 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public void driveRobotRelative(ChassisSpeeds chassisSpeeds) {
         m_drive.driveRobotRelative(chassisSpeeds);
+    }
+
+    public void setUseFixedOmega(boolean useFixedOmega) {
+        m_drive.setUseFixedOmega(useFixedOmega);
+    }
+
+    public void driveFacingAngle(Rotation2d targetHeading) {
+        m_drive.driveFacingAngle(targetHeading);
+    }
+
+    public void driveFacingPoint(Translation2d targetPoint) {
+        m_drive.driveFacingPoint(targetPoint);
     }
 }
