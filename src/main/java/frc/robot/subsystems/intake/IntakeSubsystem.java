@@ -61,7 +61,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
         SparkMaxConfig rollerConfig = new SparkMaxConfig();
         rollerConfig
-            .smartCurrentLimit(30)
+            .smartCurrentLimit(40)
             .idleMode(SparkMaxConfig.IdleMode.kCoast)
             .inverted(false);
 
