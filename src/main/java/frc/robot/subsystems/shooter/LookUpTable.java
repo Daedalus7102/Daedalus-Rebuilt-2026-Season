@@ -4,13 +4,6 @@ public class LookUpTable {
     //array anlgulo y la distancia
     //rpm fijo talves
 
-	public static void main(String[] args) {
-		for (float i = 0; i < 700; i += 10) {
-			System.out.println(i);
-			System.out.println(getPoint(i));
-		}
-	}
-
 	public record DataPoint(double distance, double rpm, double angle) {}
 
 	public static DataPoint[] table = {

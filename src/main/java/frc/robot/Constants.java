@@ -84,4 +84,14 @@ public class Constants {
         // Pigeon ID
         public static final int kPigeonID = 0;
     }
+
+	public static class ShooterConstants { // todo fill em in :)
+		public static final int shootMotor1ID = 0;
+		public static final int shootMotor2ID = 0;
+		public static final int shootMotor3ID = 0;
+		public static final int hoodMotorID = 0;
+		public static final int hoodEncoderID = 0;
+		public static final int indexerMotorID = 0;
+		public static final int feederMotorID = 0;
+	}
 }

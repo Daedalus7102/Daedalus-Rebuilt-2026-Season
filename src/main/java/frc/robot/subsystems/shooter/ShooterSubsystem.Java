@@ -1,28 +1,72 @@
-// 6 motores en total
+package frc.robot.subsystems.shooter;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
+import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.config.SparkFlexConfig;
+import com.revrobotics.spark.config.SparkBaseConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.ShooterConstants;
 
-// 3 para flywheels en coast mode
+public class ShooterSubsystem extends SubsystemBase {
+	private final SparkFlex shooterMotor1;
+	private final SparkFlex shooterMotor2;
+	private final SparkFlex shooterMotor3;
+	private final SparkFlex hoodMotor;
+	private final SparkFlex indexerMotor;
+	private final SparkFlex feederMotor;
 
-// 1 para hood (la que ajusta en angulo de tiro)
-// Este usa un ecoder absoluto como referencia.
+	private final SparkFlexConfig shooterMotorConfig;
+	private final SparkFlexConfig hoodMotorConfig;
+	private final SparkFlexConfig indexerMotorConfig;
+	private final SparkFlexConfig feederMotorConfig;
 
-// 2 para indexer. No conviene separarlos por mecanismo 
-// por que el feeder del shooter y el qe tenemos en el piso 
-// se activan al mismo tiempo y tendriamos un subystema extra 
-// sin mucho sentido.
+	public ShooterSubsystem() {
 
-// Todos son motores vortex brushless
+		shooterMotor1 = new SparkFlex(ShooterConstants.shootMotor1ID, null);
+		shooterMotor2 = new SparkFlex(ShooterConstants.shootMotor2ID, null);
+		shooterMotor3 = new SparkFlex(ShooterConstants.shootMotor3ID, null);
+		shooterMotorConfig = new SparkFlexConfig();
+		shooterMotorConfig.closedLoop
+								.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+								.pid(0.01, 0, 0);
 
-// devemos tener un metodo que permita ajustar el angulo del hood.
+		shooterMotorConfig.idleMode(SparkBaseConfig.IdleMode.kCoast);
+		shooterMotorConfig.follow(ShooterConstants.shootMotor1ID);
+		shooterMotor1.configure(shooterMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+		shooterMotor2.configure(shooterMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+		shooterMotor3.configure(shooterMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-// otro que permita setear cada shooter a una rpm. Cuando alcance 
-// las rpm o este muy cerca se debe cambiar el status de una variable 
-// booleana a readyToShoot.
+		hoodMotor = new SparkFlex(ShooterConstants.hoodMotorID, null);
+		hoodMotorConfig = new SparkFlexConfig();
+		hoodMotorConfig.closedLoop
+								.feedbackSensor(FeedbackSensor.kDetachedAbsoluteEncoder)
+								.pid(0.01, 0, 0);
+		hoodMotorConfig.idleMode(SparkBaseConfig.IdleMode.kBrake);
+		hoodMotor.configure(hoodMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-// final ajustar disparo recibiendo distancia.
-// feedear
+		indexerMotor = new SparkFlex(ShooterConstants.indexerMotorID, null);
+		indexerMotorConfig = new SparkFlexConfig();
+		indexerMotorConfig.idleMode(SparkBaseConfig.IdleMode.kCoast);
+		indexerMotor.configure(indexerMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-//feeder config
+		feederMotor = new SparkFlex(ShooterConstants.feederMotorID, null);
+		feederMotorConfig = new SparkFlexConfig();
+		feederMotorConfig.idleMode(IdleMode.kCoast);
+		feederMotor.configure(feederMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+	}
 
+	public double getHoodAngle() {
+		return hoodMotor.getExternalEncoder().getPosition();
+	}
 
-//move feeder
-// moter.set()
+	public void aim(double distance) {
+		LookUpTable.DataPoint dPoint = LookUpTable.getPoint(distance);
+		double rpm = dPoint.rpm();
+		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
+		hoodMotor.getClosedLoopController().setSetpoint(dPoint.angle(), SparkBase.ControlType.kPosition);
+	}
+}
