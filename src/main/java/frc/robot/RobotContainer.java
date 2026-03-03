@@ -19,6 +19,12 @@ import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 
 public class RobotContainer {
+	private enum AimOverrideButton {
+		NONE,
+		L1,
+		L2,
+		R1
+	}
 
 	// Controllers
 	public static final CommandPS5Controller m_driverController = new CommandPS5Controller(0);
@@ -29,6 +35,7 @@ public class RobotContainer {
 
 	// Example field point to aim at
 	private static final Translation2d kLookAtPoint = new Translation2d(8.27, 4.10);
+	private AimOverrideButton m_activeAimOverrideButton = AimOverrideButton.NONE;
 
 	// Autonomous
 	private SendableChooser<Command> m_autoChooser;
@@ -61,30 +68,42 @@ public class RobotContainer {
 		);
 
 		// Teleop convenience wrappers (driver intent first):
-		// While holding L1, override omega to hold heading at 0 deg.
-		m_driverController.L1().whileTrue(Commands.run(() -> {
-			m_swerveSubsystem.setUseFixedOmega(true);
-			m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(0.0));
-		}, m_swerveSubsystem));
-		m_driverController.L1().onFalse(Commands.runOnce(() -> {
-			if (!m_driverController.R1().getAsBoolean()) {
-				m_swerveSubsystem.setUseFixedOmega(false);
-			}
-		}, m_swerveSubsystem));
+		// Last pressed aim button wins.
+		m_driverController.L1().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
+		m_driverController.L1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
 
-		// While holding R1, override omega to look at a point on the map.
-		m_driverController.R1().whileTrue(Commands.run(() -> {
-			m_swerveSubsystem.setUseFixedOmega(true);
-			m_swerveSubsystem.driveFacingPoint(kLookAtPoint);
-		}, m_swerveSubsystem));
-		m_driverController.R1().onFalse(Commands.runOnce(() -> {
-			if (!m_driverController.L1().getAsBoolean()) {
-				m_swerveSubsystem.setUseFixedOmega(false);
-			}
-		}, m_swerveSubsystem));
+		m_driverController.L2().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
+		m_driverController.L2().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
+
+		m_driverController.R1().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
+		m_driverController.R1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
+
+		// Zero gyro heading on button press.
+		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
 
 		// Operator Controller
 		
+	}
+
+	private void setAimOverride(AimOverrideButton button) {
+		m_activeAimOverrideButton = button;
+		switch (button) {
+			case L1 -> m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(0.0));
+			case L2 -> m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(180.0));
+			case R1 -> m_swerveSubsystem.driveFacingPoint(kLookAtPoint);
+			case NONE -> {
+				m_swerveSubsystem.setUseFixedOmega(false);
+				return;
+			}
+		}
+		m_swerveSubsystem.setUseFixedOmega(true);
+	}
+
+	private void clearAimOverride(AimOverrideButton button) {
+		if (m_activeAimOverrideButton == button) {
+			m_activeAimOverrideButton = AimOverrideButton.NONE;
+			m_swerveSubsystem.setUseFixedOmega(false);
+		}
 	}
 
 	private double dPadXFromPov(int pov) {

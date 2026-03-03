@@ -23,6 +23,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -107,9 +108,13 @@ public class SwerveDrive {
     private Matrix<N3, N1> m_visionStdDevs = VecBuilder.fill(0.7, 0.7, Math.toRadians(10.0));
     private double m_lastVisionTimestampSeconds = -1.0;
     private int m_visionAcceptedCount = 0;
+    private double m_lastFieldPublishTimeSeconds = 0.0;
+    private double m_lastDashboardPublishTimeSeconds = 0.0;
 
     private static final double kLoopPeriodSeconds = 0.02;
     private static final double kDPadDriveScale = 0.3;
+    private static final double kFieldPublishPeriodSeconds = 0.05;
+    private static final double kDashboardPublishPeriodSeconds = 0.1;
     private static final SwerveModuleState[] kLockedStates = {
             new SwerveModuleState(0.0, Rotation2d.fromDegrees(45)),
             new SwerveModuleState(0.0, Rotation2d.fromDegrees(-45)),
@@ -170,13 +175,24 @@ public class SwerveDrive {
         readSwerveModulePositions();
 
         m_poseEstimator.update(m_cachedRotation, m_cachedPositions);
-        m_field.setRobotPose(m_poseEstimator.getEstimatedPosition());
+
+        double nowSeconds = Timer.getFPGATimestamp();
+        if (nowSeconds - m_lastFieldPublishTimeSeconds >= kFieldPublishPeriodSeconds) {
+            m_field.setRobotPose(m_poseEstimator.getEstimatedPosition());
+            m_lastFieldPublishTimeSeconds = nowSeconds;
+        }
     }
 
     // ======================
     // === DASHBOARD LOOP ===
     // ======================
     public void updateDashboard() {
+        double nowSeconds = Timer.getFPGATimestamp();
+        if (nowSeconds - m_lastDashboardPublishTimeSeconds < kDashboardPublishPeriodSeconds) {
+            return;
+        }
+        m_lastDashboardPublishTimeSeconds = nowSeconds;
+
         boolean FRT = SmartDashboard.getBoolean("FieldRelativeTeleop", m_fieldRelativeTeleop);
         if (FRT != m_fieldRelativeTeleop) {
             m_fieldRelativeTeleop = FRT;
@@ -345,6 +361,20 @@ public class SwerveDrive {
         m_cachedRotation = m_gyro.getRotation2d();
         readSwerveModulePositions();
         m_poseEstimator.resetPosition(m_cachedRotation, m_cachedPositions, pose);
+    }
+
+    /** Zeroes yaw while preserving current field translation in the pose estimator. */
+    public void zeroGyro() {
+        m_gyro.reset();
+        m_cachedRotation = m_gyro.getRotation2d();
+        Pose2d currentPose = m_poseEstimator.getEstimatedPosition();
+        readSwerveModulePositions();
+        m_poseEstimator.resetPosition(
+                m_cachedRotation,
+                m_cachedPositions,
+                new Pose2d(currentPose.getTranslation(), new Rotation2d()));
+        m_headingController.reset();
+        m_lastAimOmega = 0.0;
     }
 
     public void addVisionMeasurement(Pose2d visionPose, double timestampSeconds) {

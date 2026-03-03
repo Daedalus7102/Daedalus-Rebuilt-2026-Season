@@ -49,6 +49,10 @@ public class SwerveSubsystem extends SubsystemBase {
         m_drive.resetPose(pose);
     }
 
+    public void zeroGyro() {
+        m_drive.zeroGyro();
+    }
+
     /** Vision pose update entry-point (default vision std devs). */
     public void addVisionMeasurement(Pose2d visionPose, double timestampSeconds) {
         m_drive.addVisionMeasurement(visionPose, timestampSeconds);
