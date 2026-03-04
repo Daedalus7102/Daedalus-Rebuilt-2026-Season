@@ -93,5 +93,7 @@ public class Constants {
 		public static final int hoodEncoderID = 0;
 		public static final int indexerMotorID = 0;
 		public static final int feederMotorID = 0;
+
+        public static final double feedingShooterRPM = 0; 
 	}
 }
