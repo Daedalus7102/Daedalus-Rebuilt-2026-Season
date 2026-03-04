@@ -6,9 +6,11 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkFlexConfig;
+
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Constants.ShooterConstants;
 
 public class FeederSubsystem extends SubsystemBase {
 	private final SparkFlex indexerMotor;
@@ -32,6 +34,16 @@ public class FeederSubsystem extends SubsystemBase {
 	public void setSpeed(double speed) {
 		indexerMotor.set(speed);
 		feederMotor.set(speed);
+	}
+	
+	public void enable() {
+		indexerMotor.set(ShooterConstants.indexerSpeed);
+		feederMotor.set(ShooterConstants.feederSpeed);
+	}
+
+	public void disable() {
+		indexerMotor.set(0);
+		feederMotor.set(0);
 	}
 
 	@Override

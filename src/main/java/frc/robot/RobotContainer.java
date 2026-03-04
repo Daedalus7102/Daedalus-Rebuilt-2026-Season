@@ -13,7 +13,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import frc.robot.subsystems.commands.TestShooterCommand;
 import frc.robot.subsystems.drive.SwerveSubsystem;
+import frc.robot.subsystems.shooter.FeederSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 
 public class RobotContainer {
 
@@ -23,6 +26,8 @@ public class RobotContainer {
 
 	// Subsystems
 	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
+	private final ShooterSubsystem m_ShooterSubsystem = new ShooterSubsystem();
+	private final FeederSubsystem m_FeederSubsystem = new FeederSubsystem();
 
 	// Autonomous
 	private SendableChooser<Command> m_autoChooser;
@@ -49,7 +54,7 @@ public class RobotContainer {
 			() -> dPadYFromPov(m_driverController.getHID().getPOV())
 		);
 
-
+		m_driverController.cross().whileTrue(new TestShooterCommand(m_ShooterSubsystem, m_FeederSubsystem , 1));
 		// Operator Controller
 		
 	}

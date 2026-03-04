@@ -7,6 +7,7 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkFlexConfig;
+
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
@@ -49,7 +50,23 @@ public class ShooterSubsystem extends SubsystemBase {
 		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
     }
 
+	// using LUT
+	public void setMeasuredRPM(double distance) {
+		double rpm = LookUpTable.getPoint(distance).rpm();
+		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
+	}
+
 	public void setHoodAngle(double angle) {
+		hoodMotor.getClosedLoopController().setSetpoint(
+				Math.max(Math.min(angle, ShooterConstants.maxHoodAngle), ShooterConstants.minHoodAngle),
+				SparkBase.ControlType.kPosition
+		);
+	}
+
+	// using LUT
+	public void setMeasuredHoodAngle(double distance) {
+		double angle = LookUpTable.getPoint(distance).angle();
+
 		hoodMotor.getClosedLoopController().setSetpoint(
 				Math.max(Math.min(angle, ShooterConstants.maxHoodAngle), ShooterConstants.minHoodAngle),
 				SparkBase.ControlType.kPosition

@@ -96,6 +96,11 @@ public class Constants {
 		public static final double maxHoodAngle = 0.064;
 		public static final double minHoodAngle = 0.0;
 
+        // Feeder & Indexer
+        public static final double feederSpeed = 0;
+        public static final double indexerSpeed = 0;
+
 		public static final double feedingShooterRPM = 0;
+        public static final double feedingHoodAngle = 0;
 	}
 }
