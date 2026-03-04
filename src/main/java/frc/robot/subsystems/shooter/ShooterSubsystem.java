@@ -1,13 +1,13 @@
 package frc.robot.subsystems.shooter;
-import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkFlex;
-import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkFlexConfig;
+
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
 
@@ -25,7 +25,6 @@ public class ShooterSubsystem extends SubsystemBase {
 	private final SparkFlexConfig feederMotorConfig;
 
 	public ShooterSubsystem() {
-
 		shooterMotor1 = new SparkFlex(ShooterConstants.shootMotor1ID, null);
 		shooterMotor2 = new SparkFlex(ShooterConstants.shootMotor2ID, null);
 		shooterMotor3 = new SparkFlex(ShooterConstants.shootMotor3ID, null);
@@ -44,7 +43,7 @@ public class ShooterSubsystem extends SubsystemBase {
 		hoodMotorConfig = new SparkFlexConfig();
 		hoodMotorConfig.closedLoop
 								.feedbackSensor(FeedbackSensor.kDetachedAbsoluteEncoder)
-								.pid(0.01, 0, 0);
+								.pid(0.0001, 0, 0);
 
 		hoodMotorConfig.idleMode(SparkBaseConfig.IdleMode.kBrake);
 		hoodMotor.configure(hoodMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -60,14 +59,21 @@ public class ShooterSubsystem extends SubsystemBase {
 		feederMotor.configure(feederMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 	}
 
+    public void setShooterRPM(double rpm) {
+		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
+    }
+
 	public double getHoodAngle() {
 		return hoodMotor.getExternalEncoder().getPosition();
 	}
 
 	public void aim(double distance) {
 		LookUpTable.DataPoint dPoint = LookUpTable.getPoint(distance);
-		double rpm = dPoint.rpm();
-		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
 		hoodMotor.getClosedLoopController().setSetpoint(dPoint.angle(), SparkBase.ControlType.kPosition);
 	}
+
+	@Override
+    public void periodic() {
+        // Shuffleboard stuff
+    }
 }
