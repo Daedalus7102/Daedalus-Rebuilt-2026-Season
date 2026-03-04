@@ -53,7 +53,7 @@ public class ShooterSubsystem extends SubsystemBase {
 	// using LUT
 	public void setMeasuredRPM(double distance) {
 		double rpm = LookUpTable.getPoint(distance).rpm();
-		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
+		setShooterRPM(rpm);
 	}
 
 	public void setHoodAngle(double angle) {
@@ -67,10 +67,7 @@ public class ShooterSubsystem extends SubsystemBase {
 	public void setMeasuredHoodAngle(double distance) {
 		double angle = LookUpTable.getPoint(distance).angle();
 
-		hoodMotor.getClosedLoopController().setSetpoint(
-				Math.max(Math.min(angle, ShooterConstants.maxHoodAngle), ShooterConstants.minHoodAngle),
-				SparkBase.ControlType.kPosition
-		);
+		setHoodAngle(angle);
 	}
 
 	public double getHoodAngle() {
