@@ -8,6 +8,7 @@ import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
 
@@ -63,17 +64,29 @@ public class ShooterSubsystem extends SubsystemBase {
 		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
     }
 
+	public void setHoodAngle(double angle) {
+		hoodMotor.getClosedLoopController().setSetpoint(
+				Math.max(Math.min(angle, ShooterConstants.maxHoodAngle), ShooterConstants.minHoodAngle),
+				SparkBase.ControlType.kPosition
+		);
+	}
+
 	public double getHoodAngle() {
 		return hoodMotor.getExternalEncoder().getPosition();
 	}
 
 	public void aim(double distance) {
 		LookUpTable.DataPoint dPoint = LookUpTable.getPoint(distance);
-		hoodMotor.getClosedLoopController().setSetpoint(dPoint.angle(), SparkBase.ControlType.kPosition);
+		setHoodAngle(dPoint.angle());
 	}
 
 	@Override
     public void periodic() {
+		SmartDashboard.putNumber("HoodAngle", getHoodAngle());
+		SmartDashboard.putNumber("HoodTargetAngle", hoodMotor.getClosedLoopController().getSetpoint());
+
+		SmartDashboard.putNumber("ShooterRPM", shooterMotor1.getEncoder().getVelocity());
+		SmartDashboard.putNumber("ShooterTargetRPM", shooterMotor1.getClosedLoopController().getSetpoint());
         // Shuffleboard stuff
     }
 }
