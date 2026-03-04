@@ -85,13 +85,15 @@ public class Constants {
         public static final int kPigeonID = 0;
     }
 
-	public static class ShooterConstants { // todo fill em in :)
-		public static final int shootMotor1ID = 0;
-		public static final int shootMotor2ID = 0;
-		public static final int shootMotor3ID = 0;
-		public static final int hoodMotorID = 0;
-		public static final int hoodEncoderID = 0;
-		public static final int indexerMotorID = 0;
-		public static final int feederMotorID = 0;
+	public static class ShooterConstants {
+		public static final int shootMotor1ID = 23;
+		public static final int shootMotor2ID = 24;
+		public static final int shootMotor3ID = 25;
+		public static final int hoodMotorID = 22;
+		public static final int indexerMotorID = 21;
+		public static final int feederMotorID = 20;
+
+		public static final double maxHoodAngle = 0.064;
+		public static final double minHoodAngle = 0.0;
 	}
 }

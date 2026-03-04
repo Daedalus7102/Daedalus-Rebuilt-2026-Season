@@ -45,6 +45,7 @@ public class ShooterSubsystem extends SubsystemBase {
 		hoodMotorConfig.closedLoop
 								.feedbackSensor(FeedbackSensor.kDetachedAbsoluteEncoder)
 								.pid(0.01, 0, 0);
+
 		hoodMotorConfig.idleMode(SparkBaseConfig.IdleMode.kBrake);
 		hoodMotor.configure(hoodMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
