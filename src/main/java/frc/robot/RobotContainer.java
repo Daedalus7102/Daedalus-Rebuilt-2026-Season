@@ -6,13 +6,11 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.subsystems.commands.TestShooterCommand;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.led.LEDController;
@@ -29,8 +27,7 @@ public class RobotContainer {
 	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
 	private final ShooterSubsystem m_ShooterSubsystem = new ShooterSubsystem();
 	private final FeederSubsystem m_FeederSubsystem = new FeederSubsystem();
-	public static final LEDController m_leds = new LEDController();
-	
+	public static final LEDController leds = new LEDController();
 
 	// Autonomous
 	private SendableChooser<Command> m_autoChooser;

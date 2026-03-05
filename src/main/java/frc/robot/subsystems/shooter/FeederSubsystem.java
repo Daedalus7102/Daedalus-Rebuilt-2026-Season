@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.ShooterConstants;
-import frc.robot.RobotContainer;
 
 public class FeederSubsystem extends SubsystemBase {
 	private final SparkFlex indexerMotor;
@@ -41,13 +40,11 @@ public class FeederSubsystem extends SubsystemBase {
 	public void enable() {
 		indexerMotor.set(ShooterConstants.indexerSpeed);
 		feederMotor.set(ShooterConstants.feederSpeed);
-		RobotContainer.m_leds.setIndexing();
 	}
 
 	public void disable() {
 		indexerMotor.stopMotor();
 		feederMotor.stopMotor();
-		RobotContainer.m_leds.setOff();
 	}
 
 	@Override

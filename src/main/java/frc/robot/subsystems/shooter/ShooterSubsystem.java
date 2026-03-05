@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.RobotContainer;
+import frc.robot.subsystems.led.LEDState;
 
 public class ShooterSubsystem extends SubsystemBase {
 	private final SparkFlex shooterMotor1;
@@ -49,12 +50,12 @@ public class ShooterSubsystem extends SubsystemBase {
 
 	public void disable() {
 		shooterMotor1.stopMotor();
-		RobotContainer.m_leds.setOff();
+		RobotContainer.leds.set(LEDState.OFF);
 	}
 
     public void setShooterRPM(double rpm) {
 		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
-		RobotContainer.m_leds.setShooting();
+		RobotContainer.leds.set(LEDState.SHOOT);
     }
 
 	// using LUT
