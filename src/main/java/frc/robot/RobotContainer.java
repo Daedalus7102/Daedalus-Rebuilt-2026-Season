@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.subsystems.commands.TestShooterCommand;
 import frc.robot.subsystems.drive.SwerveSubsystem;
+import frc.robot.subsystems.led.LEDController;
 import frc.robot.subsystems.shooter.FeederSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 
@@ -28,6 +29,8 @@ public class RobotContainer {
 	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
 	private final ShooterSubsystem m_ShooterSubsystem = new ShooterSubsystem();
 	private final FeederSubsystem m_FeederSubsystem = new FeederSubsystem();
+	public static final LEDController m_leds = new LEDController();
+	
 
 	// Autonomous
 	private SendableChooser<Command> m_autoChooser;
