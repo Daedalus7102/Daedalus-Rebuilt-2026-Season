@@ -36,7 +36,7 @@ public class FeederSubsystem extends SubsystemBase {
 		indexerMotor.set(speed);
 		feederMotor.set(speed);
 	}
-	
+
 	public void enable() {
 		indexerMotor.set(ShooterConstants.indexerSpeed);
 		feederMotor.set(ShooterConstants.feederSpeed);
@@ -48,8 +48,8 @@ public class FeederSubsystem extends SubsystemBase {
 	}
 
 	@Override
-    public void periodic() {
+	public void periodic() {
 		SmartDashboard.putNumber("FeederSpeed", feederMotor.get());
 		SmartDashboard.putNumber("IndexerSpeed", indexerMotor.get());
-    }
+	}
 }

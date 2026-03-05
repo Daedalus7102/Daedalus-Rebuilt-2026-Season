@@ -1,15 +1,21 @@
 package frc.robot.subsystems.shooter;
 
 public class LookUpTable {
-    //array anlgulo y la distancia
-    //rpm fijo talves
 
-	public record DataPoint(double distance, double rpm, double angle) {}
+	public record DataPoint(double distance, double rpm, double angle) {
+	}
 
 	public static DataPoint[] table = {
 			new DataPoint(0, 0, 0),
 	};
 
+	/**
+	 * Gets an interpolated DataPoint from the table
+	 * if the value is out of the table range, it will return the last value.
+	 *
+	 * @param distance the distance from the target
+	 * @return a DataPoint with the RPM and hood angle
+	 */
 	public static DataPoint getPoint(double distance) {
 
 		if (distance <= table[0].distance) {
@@ -32,7 +38,7 @@ public class LookUpTable {
 		return table[table.length - 1];
 	}
 
-	public static DataPoint interpolatePoint(DataPoint a, DataPoint b, double desiredDistance) {
+	private static DataPoint interpolatePoint(DataPoint a, DataPoint b, double desiredDistance) {
 
 		double t = (desiredDistance - a.distance) / (b.distance - a.distance);
 
@@ -43,8 +49,7 @@ public class LookUpTable {
 		);
 	}
 
-	public static double lerp(double a, double b, double t) {
+	private static double lerp(double a, double b, double t) {
 		return a + (b - a) * t;
 	}
 }
-// metodo de interolacion

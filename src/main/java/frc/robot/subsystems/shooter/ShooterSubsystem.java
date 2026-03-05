@@ -1,4 +1,5 @@
 package frc.robot.subsystems.shooter;
+
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.FeedbackSensor;
@@ -7,7 +8,6 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkFlexConfig;
-
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
@@ -27,8 +27,8 @@ public class ShooterSubsystem extends SubsystemBase {
 		shooterMotor3 = new SparkFlex(ShooterConstants.shootMotor3ID, SparkLowLevel.MotorType.kBrushless);
 		shooterMotorConfig = new SparkFlexConfig();
 		shooterMotorConfig.closedLoop
-								.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-								.pid(0.01, 0, 0);
+				.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+				.pid(0.01, 0, 0);
 
 		shooterMotorConfig.idleMode(SparkBaseConfig.IdleMode.kCoast);
 		shooterMotorConfig.follow(ShooterConstants.shootMotor1ID);
@@ -39,8 +39,8 @@ public class ShooterSubsystem extends SubsystemBase {
 		hoodMotor = new SparkFlex(ShooterConstants.hoodMotorID, SparkLowLevel.MotorType.kBrushless);
 		hoodMotorConfig = new SparkFlexConfig();
 		hoodMotorConfig.closedLoop
-								.feedbackSensor(FeedbackSensor.kDetachedAbsoluteEncoder)
-								.pid(0.0001, 0, 0);
+				.feedbackSensor(FeedbackSensor.kDetachedAbsoluteEncoder)
+				.pid(0.0001, 0, 0);
 
 		hoodMotorConfig.idleMode(SparkBaseConfig.IdleMode.kBrake);
 		hoodMotor.configure(hoodMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -50,11 +50,10 @@ public class ShooterSubsystem extends SubsystemBase {
 		shooterMotor1.stopMotor();
 	}
 
-    public void setShooterRPM(double rpm) {
+	public void setShooterRPM(double rpm) {
 		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
-    }
+	}
 
-	// using LUT
 	public void setMeasuredRPM(double distance) {
 		double rpm = LookUpTable.getPoint(distance).rpm();
 		setShooterRPM(rpm);
@@ -67,7 +66,6 @@ public class ShooterSubsystem extends SubsystemBase {
 		);
 	}
 
-	// using LUT
 	public void setMeasuredHoodAngle(double distance) {
 		double angle = LookUpTable.getPoint(distance).angle();
 		setHoodAngle(angle);
@@ -83,11 +81,11 @@ public class ShooterSubsystem extends SubsystemBase {
 	}
 
 	@Override
-    public void periodic() {
+	public void periodic() {
 		SmartDashboard.putNumber("HoodAngle", getHoodAngle());
 		SmartDashboard.putNumber("HoodTargetAngle", hoodMotor.getClosedLoopController().getSetpoint());
 
 		SmartDashboard.putNumber("ShooterRPM", shooterMotor1.getEncoder().getVelocity());
 		SmartDashboard.putNumber("ShooterTargetRPM", shooterMotor1.getClosedLoopController().getSetpoint());
-    }
+	}
 }
