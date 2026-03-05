@@ -26,12 +26,11 @@ public class TestShooterCommand extends Command {
     @Override
     public void end(boolean _i) {
         Feeder.disable();
-        Shooter.setShooterRPM(0);
+        Shooter.disable();
     }
     
     @Override
     public boolean isFinished() {
         return false;
     }
-    
 }

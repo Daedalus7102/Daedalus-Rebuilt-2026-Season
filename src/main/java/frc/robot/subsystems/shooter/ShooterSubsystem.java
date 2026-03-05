@@ -46,6 +46,10 @@ public class ShooterSubsystem extends SubsystemBase {
 		hoodMotor.configure(hoodMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 	}
 
+	public void disable() {
+		shooterMotor1.stopMotor();
+	}
+
     public void setShooterRPM(double rpm) {
 		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
     }
@@ -66,7 +70,6 @@ public class ShooterSubsystem extends SubsystemBase {
 	// using LUT
 	public void setMeasuredHoodAngle(double distance) {
 		double angle = LookUpTable.getPoint(distance).angle();
-
 		setHoodAngle(angle);
 	}
 

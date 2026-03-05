@@ -43,8 +43,8 @@ public class FeederSubsystem extends SubsystemBase {
 	}
 
 	public void disable() {
-		indexerMotor.set(0);
-		feederMotor.set(0);
+		indexerMotor.stopMotor();
+		feederMotor.stopMotor();
 	}
 
 	@Override

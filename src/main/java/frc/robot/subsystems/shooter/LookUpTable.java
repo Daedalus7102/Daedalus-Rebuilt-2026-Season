@@ -7,10 +7,7 @@ public class LookUpTable {
 	public record DataPoint(double distance, double rpm, double angle) {}
 
 	public static DataPoint[] table = {
-			new DataPoint(21, 210, 2.1),
-			new DataPoint(82, 820, 8.2),
-			new DataPoint(112, 1120, 11.2),
-			new DataPoint(590, 5900, 59)
+			new DataPoint(0, 0, 0),
 	};
 
 	public static DataPoint getPoint(double distance) {
