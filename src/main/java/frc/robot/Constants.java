@@ -96,11 +96,21 @@ public class Constants {
 		public static final double maxHoodAngle = 0.064;
 		public static final double minHoodAngle = 0.0;
 
-        // Feeder & Indexer
-        public static final double feederSpeed = 0;
-        public static final double indexerSpeed = 0;
+		// Shooter closed-loop (Spark velocity control in RPM)
+		// 1:1
+		public static final double shooterP = 0.0002;
+		public static final double shooterI = 0.0;
+		public static final double shooterD = 0.0;
+		public static final double shooterKV = 0.00015;
 
-		public static final double feedingShooterRPM = 0;
+		public static final double shooterTargetRPM = 4500;
+		public static final double shooterReadyToleranceRPM = 150;
+
+        // Feeder & Indexer
+        public static final double feederSpeed = 0.70;
+        public static final double indexerSpeed = 0.70;
+
+		public static final double feedingShooterRPM = shooterTargetRPM;
         public static final double feedingHoodAngle = 0;
 	}
 }
