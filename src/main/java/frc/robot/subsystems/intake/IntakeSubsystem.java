@@ -23,12 +23,14 @@ public class IntakeSubsystem extends SubsystemBase {
     private static final double kPivotP = 5.0;
 
     private final SparkMax m_pivotMotor;
+    private final SparkMax m_pivotFollowerMotor;
     private final SparkMax m_rollerMotor;
     private final RelativeEncoder m_pivotRelativeEncoder;
 
     public IntakeSubsystem() {
         // Pivot motor (intake in/out)
         m_pivotMotor = new SparkMax(IntakeConstants.kRotateMotorID, MotorType.kBrushless);
+        m_pivotFollowerMotor = new SparkMax(IntakeConstants.kFeederMotorID, MotorType.kBrushless);
         m_pivotRelativeEncoder = m_pivotMotor.getAlternateEncoder();
 
         SparkMaxConfig pivotConfig = new SparkMaxConfig();
@@ -55,6 +57,18 @@ public class IntakeSubsystem extends SubsystemBase {
             .reverseSoftLimitEnabled(false);
 
         m_pivotMotor.configure(pivotConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+
+        SparkMaxConfig pivotFollowerConfig = new SparkMaxConfig();
+        pivotFollowerConfig
+            .smartCurrentLimit(35)
+            .idleMode(SparkMaxConfig.IdleMode.kBrake)
+            .follow(m_pivotMotor, true);
+
+        m_pivotFollowerMotor.configure(
+            pivotFollowerConfig,
+            ResetMode.kResetSafeParameters,
+            PersistMode.kNoPersistParameters
+        );
 
         // Roller motor
         m_rollerMotor = new SparkMax(IntakeConstants.kRollerMotorID, MotorType.kBrushless);
@@ -96,6 +110,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public void stopPivot() {
         m_pivotMotor.stopMotor();
+        m_pivotFollowerMotor.stopMotor();
     }
 
     // Roller control (simple set as requested)
