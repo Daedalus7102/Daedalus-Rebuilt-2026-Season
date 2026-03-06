@@ -93,22 +93,33 @@ public class Constants {
 		public static final int indexerMotorID = 21;
 		public static final int feederMotorID = 20;
 
-		public static final double maxHoodAngle = 0.064;
-		public static final double minHoodAngle = 0.0;
+		public static final double maxHoodAngle = 0.3967;
+		public static final double minHoodAngle = 0.3931;
+
+        // Shooter motor configuration
+        public static final int shootCurrentLimit = 35;
+        public static final double shootRampRate = 0.2;
+        public static final double voltageCompensation = 12;
 
 		// Shooter closed-loop (Spark velocity control in RPM)
 		// 1:1
-		public static final double shooterP = 0.0002;
+		public static final double shooterP = 0.001;
 		public static final double shooterI = 0.0;
 		public static final double shooterD = 0.0;
-		public static final double shooterKV = 0.00015;
+		public static final double shooterKV = 0.0002;
 
-		public static final double shooterTargetRPM = 4500;
-		public static final double shooterReadyToleranceRPM = 150;
+        // Shooter hood closed-loop (Position control through absolute encoder)
+        public static final double hoodP = 0;
+        public static final double hoodI = 0;
+        public static final double hoodD = 0;
+        public static final double hoodKV = 0;
+
+		public static final double shooterTargetRPM = 5000;
+		public static final double shooterReadyToleranceRPM = 100;
 
         // Feeder & Indexer
-        public static final double feederSpeed = 0.70;
-        public static final double indexerSpeed = 0.70;
+        public static final double feederSpeed = 0.30;
+        public static final double indexerSpeed = -0.40;
 
 		public static final double feedingShooterRPM = shooterTargetRPM;
         public static final double feedingHoodAngle = 0;

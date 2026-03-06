@@ -13,6 +13,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.subsystems.commands.FeedShooter;
+import frc.robot.subsystems.commands.SpoolShooter;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.shooter.FeederSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
@@ -53,19 +55,8 @@ public class RobotContainer {
 				() -> dPadYFromPov(m_driverController.getHID().getPOV())
 		);
 
-		m_driverController.cross().whileTrue(Commands.run(() -> {
-			m_ShooterSubsystem.setShooterRPM(ShooterConstants.shooterTargetRPM);
-			if (m_ShooterSubsystem.isAtTargetRPM(ShooterConstants.shooterReadyToleranceRPM)) {
-				m_FeederSubsystem.enable();
-			} else {
-				m_FeederSubsystem.disable();
-			}
-		}, m_ShooterSubsystem, m_FeederSubsystem));
-
-		m_driverController.cross().onFalse(Commands.runOnce(() -> {
-			m_FeederSubsystem.disable();
-			m_ShooterSubsystem.disable();
-		}, m_ShooterSubsystem, m_FeederSubsystem));
+		m_driverController.R2().whileTrue(new SpoolShooter(m_ShooterSubsystem, 1));
+		m_driverController.cross().whileTrue(new FeedShooter(m_FeederSubsystem, m_ShooterSubsystem));
 
 		// Operator Controller
 	}
