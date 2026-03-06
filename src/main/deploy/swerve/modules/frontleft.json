@@ -5,7 +5,7 @@
   },
   "absoluteEncoderOffset": -0.311035,
   "drive": {
-    "type": "sparkmax_neo",
+    "type": "sparkflex_vortex",
     "id": 1,
     "canbus": "Drivetrain"
   },
