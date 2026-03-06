@@ -19,7 +19,6 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
-  private final Runnable m_dashboardLoop;
   private double m_lastLoopTimestampSeconds = 0.0;
   private double m_lastLoopDiagPublishSeconds = 0.0;
   private int m_loopOverrunCount = 0;
@@ -35,7 +34,6 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
-    m_dashboardLoop = m_robotContainer.dashboardLoop();
   }
 
   /**
@@ -59,7 +57,6 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
-    m_dashboardLoop.run();
 
     if (nowSeconds - m_lastLoopDiagPublishSeconds >= kLoopDiagPublishPeriodSeconds) {
       SmartDashboard.putNumber("RobotLoopDtMs", loopDtSeconds * 1000.0);

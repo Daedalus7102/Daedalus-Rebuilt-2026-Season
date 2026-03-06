@@ -15,8 +15,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
-import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
-import frc.robot.subsystems.drive.SwerveSubsystem;
 
 public class RobotContainer {
 	private enum AimOverrideButton {
@@ -31,7 +29,6 @@ public class RobotContainer {
 	// public static final CommandPS5Controller m_operatorController = new CommandPS5Controller(1);
 
 	// Subsystems
-	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
 
 	// Example field point to aim at
 	private static final Translation2d kLookAtPoint = new Translation2d(8.27, 4.10);
@@ -45,12 +42,7 @@ public class RobotContainer {
 		NamedCommands.registerCommand("nothing", Commands.sequence(
 		));
 		// Autonomous event markers: explicit field-based aiming helpers.
-		NamedCommands.registerCommand("AimSpeakerOn", m_swerveSubsystem.enableAutoAimAtPoint(kLookAtPoint));
-		NamedCommands.registerCommand("AimSpeakerOff", m_swerveSubsystem.disableAutoAim());
-		NamedCommands.registerCommand("AimForwardOn", m_swerveSubsystem.enableAutoAimAtAngle(Rotation2d.fromDegrees(0.0)));
-		NamedCommands.registerCommand("AimForwardOff", m_swerveSubsystem.disableAutoAim());
-		m_swerveSubsystem.setReducedVelocityScale(kReducedDriveScale);
-		
+
 		configureBindings();
 
 		m_autoChooser = AutoBuilder.buildAutoChooser();
@@ -59,57 +51,14 @@ public class RobotContainer {
 
 	private void configureBindings() {
 		// Driver Controller
-		m_swerveSubsystem.setJoystickSuppliers(
-			() -> -m_driverController.getHID().getLeftY(),
-			() -> -m_driverController.getHID().getLeftX(),
-			() -> -m_driverController.getHID().getRightX()
-		);
-		m_swerveSubsystem.setDPadSuppliers(
-			() -> dPadXFromPov(m_driverController.getHID().getPOV()),
-			() -> dPadYFromPov(m_driverController.getHID().getPOV())
-		);
-
-		// Teleop convenience wrappers (driver intent first):
-		// Last pressed aim button wins.
-		m_driverController.L1().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
-		m_driverController.L1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
-
-		m_driverController.L2().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
-		m_driverController.L2().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
-
-		m_driverController.R1().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
-		m_driverController.R1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
-
-		// Hold R2 for precision/slow translation driving.
-		m_driverController.R2().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setUseReducedVelocity(true), m_swerveSubsystem));
-		m_driverController.R2().onFalse(Commands.runOnce(() -> m_swerveSubsystem.setUseReducedVelocity(false), m_swerveSubsystem));
-
-		// Zero gyro heading on button press.
-		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
-
-		// Operator Controller
 		
 	}
 
 	private void setAimOverride(AimOverrideButton button) {
-		m_activeAimOverrideButton = button;
-		switch (button) {
-			case L1 -> m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(0.0));
-			case L2 -> m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(180.0));
-			case R1 -> m_swerveSubsystem.driveFacingPoint(kLookAtPoint);
-			case NONE -> {
-				m_swerveSubsystem.setUseFixedOmega(false);
-				return;
-			}
-		}
-		m_swerveSubsystem.setUseFixedOmega(true);
 	}
 
 	private void clearAimOverride(AimOverrideButton button) {
-		if (m_activeAimOverrideButton == button) {
-			m_activeAimOverrideButton = AimOverrideButton.NONE;
-			m_swerveSubsystem.setUseFixedOmega(false);
-		}
+
 	}
 
 	private double dPadXFromPov(int pov) {
@@ -133,20 +82,8 @@ public class RobotContainer {
 	}
 
 	public void onAutonomousInit() {
-		m_swerveSubsystem.disableAutoAimNow();
-		m_swerveSubsystem.setUseReducedVelocity(false);
-		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.AUTO));
 	}
 
 	public void onTeleopInit() {
-		m_swerveSubsystem.disableAutoAimNow();
-		m_swerveSubsystem.setUseReducedVelocity(false);
-		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.IDLE));
-	}
-
-	public Runnable dashboardLoop() {
-		return () -> {
-			m_swerveSubsystem.updateDashboard();
-		};
 	}
 }
