@@ -1,11 +1,7 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -21,7 +17,7 @@ public class SwerveSubsystem extends SubsystemBase {
 		FIELD_RELATIVE,
 		BOT_RELATIVE,
 		AUTO_HUB,
-		AUTO_TEAM // aim towards our team side
+		AUTO_TEAM
 	}
 
 	private DoubleSupplier joystickX, joystickY, joystickRotation;
@@ -42,12 +38,35 @@ public class SwerveSubsystem extends SubsystemBase {
 		this.joystickRotation = joystickRotation;
 	}
 
-	public void setHub(Translation2d pos) {
+	@Override
+	public void periodic() {
+		Translation2d translation = new Translation2d(joystickX.getAsDouble(), joystickY.getAsDouble());
+		double rotation = joystickRotation.getAsDouble();
+		switch (driveMode) {
+			case FIELD_RELATIVE:
+				driveFieldRelative(translation, rotation);
+				break;
+			case BOT_RELATIVE:
+				driveBotRelative(translation, rotation);
+				break;
+			case AUTO_HUB:
+				driveAutoHub(translation);
+				break;
+			case AUTO_TEAM:
+				driveAutoTeam(translation);
+		}
+	}
+
+	public void setHubPos(Translation2d pos) {
 		hubPos = pos;
 	}
 
 	public void setMode(DriveMode mode) {
 		driveMode = mode;
+	}
+
+	public void resetMode() {
+		driveMode = DriveMode.FIELD_RELATIVE;
 	}
 
 	private void driveFieldRelative(Translation2d translation, double rotation) {
@@ -63,7 +82,11 @@ public class SwerveSubsystem extends SubsystemBase {
 	}
 
 	private void driveAutoHub(Translation2d translation) {
-		driveTargetAngle(translation, getRotationToPoint(hubPos));
+		Translation2d compensatedPos = new Translation2d( // todo adjust subtraction depending on airtime or something
+				hubPos.getX() - swerveDrive.getFieldVelocity().vxMetersPerSecond,
+				hubPos.getY() - swerveDrive.getFieldVelocity().vyMetersPerSecond
+		);
+		driveTargetAngle(translation, getRotationToPoint(compensatedPos));
 	}
 
 	private double getRotationToPoint(Translation2d target) {
