@@ -17,12 +17,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 
 public class RobotContainer {
-	private enum AimOverrideButton {
-		NONE,
-		L1,
-		L2,
-		R1
-	}
 
 	// Controllers
 	public static final CommandPS5Controller m_driverController = new CommandPS5Controller(0);
@@ -33,7 +27,6 @@ public class RobotContainer {
 	// Example field point to aim at
 	private static final Translation2d kLookAtPoint = new Translation2d(8.27, 4.10);
 	private static final double kReducedDriveScale = 0.50;
-	private AimOverrideButton m_activeAimOverrideButton = AimOverrideButton.NONE;
 
 	// Autonomous
 	private SendableChooser<Command> m_autoChooser;
