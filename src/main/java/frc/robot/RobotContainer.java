@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
-import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.commands.FeedShooter;
 import frc.robot.subsystems.commands.SpoolShooter;
 import frc.robot.subsystems.drive.SwerveSubsystem;
@@ -55,8 +54,9 @@ public class RobotContainer {
 				() -> dPadYFromPov(m_driverController.getHID().getPOV())
 		);
 
-		m_driverController.R2().whileTrue(new SpoolShooter(m_ShooterSubsystem, 1));
-		m_driverController.cross().whileTrue(new FeedShooter(m_FeederSubsystem, m_ShooterSubsystem));
+		m_driverController.R2().whileTrue(new SpoolShooter(m_ShooterSubsystem, () -> 1));
+		m_driverController.cross().whileTrue(new FeedShooter(m_FeederSubsystem, m_ShooterSubsystem, true));
+		//m_driverController.triangle().whileTrue(new FeedShooter(m_FeederSubsystem, m_ShooterSubsystem, false));
 
 		// Operator Controller
 	}
