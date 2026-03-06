@@ -13,6 +13,14 @@ import java.util.function.DoubleSupplier;
 
 public class SwerveSubsystem extends SubsystemBase {
 
+	/**
+	 * <ul>
+	 *   <li>{@link DriveMode#FIELD_RELATIVE}: normal field-oriented driving.</li>
+	 *   <li>{@link DriveMode#BOT_RELATIVE}: driving relative to the robot.</li>
+	 *   <li>{@link DriveMode#AUTO_HUB}: locks rotation to point to the hub, field-oriented.</li>
+	 *   <li>{@link DriveMode#AUTO_TEAM}: locks rotation to point to 0 degrees, field-oriented.</li>
+	 * </ul>
+	 */
 	public enum DriveMode {
 		FIELD_RELATIVE,
 		BOT_RELATIVE,
@@ -57,14 +65,28 @@ public class SwerveSubsystem extends SubsystemBase {
 		}
 	}
 
+	/**
+	 * Sets the position of the hub. When in {@link DriveMode#AUTO_HUB} mode,
+	 * the swerve will aim at this position compensating for velocity.
+	 *
+	 * @param pos {@link Translation2d} position of the hub.
+	 */
 	public void setHubPos(Translation2d pos) {
 		hubPos = pos;
 	}
 
+	/**
+	 * Sets the drive mode.
+	 *
+	 * @param mode {@link DriveMode} the mode.
+	 */
 	public void setMode(DriveMode mode) {
 		driveMode = mode;
 	}
 
+	/**
+	 * Sets the drive mode to {@link DriveMode#FIELD_RELATIVE}.
+	 */
 	public void resetMode() {
 		driveMode = DriveMode.FIELD_RELATIVE;
 	}
