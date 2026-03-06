@@ -4,8 +4,10 @@ import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -18,23 +20,40 @@ public class ShooterSubsystem extends SubsystemBase {
 	private final SparkFlex shooterMotor3;
 	private final SparkFlex hoodMotor;
 
-	private final SparkFlexConfig shooterMotorConfig;
+	private final SparkFlexConfig shooterMotorConfig1;
+	private final SparkFlexConfig shooterMotorConfig2;
+	private final SparkFlexConfig shooterMotorConfig3;
+
 	private final SparkFlexConfig hoodMotorConfig;
 
 	public ShooterSubsystem() {
 		shooterMotor1 = new SparkFlex(ShooterConstants.shootMotor1ID, SparkLowLevel.MotorType.kBrushless);
 		shooterMotor2 = new SparkFlex(ShooterConstants.shootMotor2ID, SparkLowLevel.MotorType.kBrushless);
 		shooterMotor3 = new SparkFlex(ShooterConstants.shootMotor3ID, SparkLowLevel.MotorType.kBrushless);
-		shooterMotorConfig = new SparkFlexConfig();
-		shooterMotorConfig.closedLoop
-				.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-				.pid(0.01, 0, 0);
+		shooterMotorConfig1 = new SparkFlexConfig();
+		shooterMotorConfig2 = new SparkFlexConfig();
+		shooterMotorConfig3 = new SparkFlexConfig();
 
-		shooterMotorConfig.idleMode(SparkBaseConfig.IdleMode.kCoast);
-		shooterMotorConfig.follow(ShooterConstants.shootMotor1ID);
-		shooterMotor1.configure(shooterMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-		shooterMotor2.configure(shooterMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-		shooterMotor3.configure(shooterMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+		shooterMotorConfig1.closedLoop
+				.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+				.pid(0.00005, 0, 0);
+		shooterMotorConfig1.closedLoop.feedForward.kV(0.1);
+		shooterMotorConfig2.closedLoop
+				.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+				.pid(0.00005, 0, 0);
+		shooterMotorConfig2.closedLoop.feedForward.kV(0.1);
+		shooterMotorConfig3.closedLoop
+				.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+				.pid(0.00005, 0, 0);
+		shooterMotorConfig3.closedLoop.feedForward.kV(0.1);
+
+		shooterMotorConfig1.idleMode(SparkBaseConfig.IdleMode.kCoast);
+		shooterMotorConfig2.idleMode(SparkBaseConfig.IdleMode.kCoast);
+		shooterMotorConfig3.idleMode(SparkBaseConfig.IdleMode.kCoast);
+
+		shooterMotor1.configure(shooterMotorConfig1, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+		shooterMotor2.configure(shooterMotorConfig2, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+		shooterMotor3.configure(shooterMotorConfig3, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
 		hoodMotor = new SparkFlex(ShooterConstants.hoodMotorID, SparkLowLevel.MotorType.kBrushless);
 		hoodMotorConfig = new SparkFlexConfig();
@@ -51,7 +70,13 @@ public class ShooterSubsystem extends SubsystemBase {
 	}
 
 	public void setShooterRPM(double rpm) {
-		shooterMotor1.getClosedLoopController().setSetpoint(rpm, SparkBase.ControlType.kVelocity);
+		shooterMotor1.getClosedLoopController().setSetpoint(rpm, ControlType.kVelocity);
+		shooterMotor2.getClosedLoopController().setSetpoint(rpm, ControlType.kVelocity);
+		shooterMotor3.getClosedLoopController().setSetpoint(rpm, ControlType.kVelocity);
+
+		System.out.println("RPM ACTUAL VALUE: " + rpm);	
+		System.out.println("SET VALUE: " + shooterMotor1.getClosedLoopController().getSetpoint());
+
 	}
 
 	public void setMeasuredRPM(double distance) {

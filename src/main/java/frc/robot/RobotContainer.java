@@ -54,7 +54,8 @@ public class RobotContainer {
 			() -> dPadYFromPov(m_driverController.getHID().getPOV())
 		);
 
-		m_driverController.cross().whileTrue(new TestShooterCommand(m_ShooterSubsystem, m_FeederSubsystem , 1));
+		m_driverController.cross().onTrue(new TestShooterCommand(m_ShooterSubsystem, m_FeederSubsystem , 1));
+		m_driverController.cross().onFalse(Commands.runOnce(() -> m_ShooterSubsystem.disable()));
 		// Operator Controller
 		
 	}

@@ -7,6 +7,7 @@ public class LookUpTable {
 
 	public static DataPoint[] table = {
 			new DataPoint(0, 0, 0),
+			new DataPoint(1, 500, 0)
 	};
 
 	/**
