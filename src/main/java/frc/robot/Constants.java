@@ -74,9 +74,9 @@ public class Constants {
         public static final boolean kBackRightDriveInverted = true;
 
         // Drive Motor PID Constants
-        public static final double kDriveP = 0.015, kDriveI = 0.0, kDriveD = 0.0, kDriveFF = 0.2;
+        public static final double kDriveP = 0.28, kDriveI = 0.0, kDriveD = 0.0, kDriveFF = 2.25;
         // Turning Motor PID Constants
-        public static final double kTurnP = 0.01, kTurnI = 0.0, kTurnD = 0.0;
+        public static final double kTurnP = 0.015, kTurnI = 0.0, kTurnD = 0.0;
         // Drive Motor Configuration
         public static final int kDriveCurrentLimitA = 40;
         public static final double kDriveVoltageComp = 12.0;

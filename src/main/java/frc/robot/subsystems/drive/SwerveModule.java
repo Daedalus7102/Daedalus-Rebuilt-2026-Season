@@ -174,4 +174,20 @@ public class SwerveModule {
         return m_moduleState;
     }
 
+    public double getTargetVelocityMetersPerSecond() {
+        return m_moduleState.speedMetersPerSecond;
+    }
+
+    public double getActualVelocityMetersPerSecond() {
+        return m_driveRelativeEncoder.getVelocity();
+    }
+
+    public double getTargetAngleDegrees() {
+        return m_moduleState.angle.getDegrees();
+    }
+
+    public double getActualAngleDegrees() {
+        return Rotation2d.fromDegrees(m_turnRelativeEncoder.getPosition()).getDegrees();
+    }
+
 }

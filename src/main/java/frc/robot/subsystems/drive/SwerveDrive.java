@@ -222,6 +222,26 @@ public class SwerveDrive {
         SmartDashboard.putNumber("AimErrorDeg", desiredHeading.minus(m_cachedRotation).getDegrees());
         SmartDashboard.putNumber("AimOmegaCmd", m_lastAimOmega);
 
+        // SmartDashboard.putNumber("Swerve/FL/TargetVelMps", m_swerveModule1.getTargetVelocityMetersPerSecond());
+        // SmartDashboard.putNumber("Swerve/FR/TargetVelMps", m_swerveModule2.getTargetVelocityMetersPerSecond());
+        // SmartDashboard.putNumber("Swerve/BL/TargetVelMps", m_swerveModule3.getTargetVelocityMetersPerSecond());
+        // SmartDashboard.putNumber("Swerve/BR/TargetVelMps", m_swerveModule4.getTargetVelocityMetersPerSecond());
+
+        // SmartDashboard.putNumber("Swerve/FL/ActualVelMps", m_swerveModule1.getActualVelocityMetersPerSecond());
+        // SmartDashboard.putNumber("Swerve/FR/ActualVelMps", m_swerveModule2.getActualVelocityMetersPerSecond());
+        // SmartDashboard.putNumber("Swerve/BL/ActualVelMps", m_swerveModule3.getActualVelocityMetersPerSecond());
+        // SmartDashboard.putNumber("Swerve/BR/ActualVelMps", m_swerveModule4.getActualVelocityMetersPerSecond());
+
+        SmartDashboard.putNumber("Swerve/FL/TargetAngleDeg", m_swerveModule1.getTargetAngleDegrees());
+        SmartDashboard.putNumber("Swerve/FR/TargetAngleDeg", m_swerveModule2.getTargetAngleDegrees());
+        SmartDashboard.putNumber("Swerve/BL/TargetAngleDeg", m_swerveModule3.getTargetAngleDegrees());
+        SmartDashboard.putNumber("Swerve/BR/TargetAngleDeg", m_swerveModule4.getTargetAngleDegrees());
+
+        SmartDashboard.putNumber("Swerve/FL/ActualAngleDeg", m_swerveModule1.getActualAngleDegrees());
+        SmartDashboard.putNumber("Swerve/FR/ActualAngleDeg", m_swerveModule2.getActualAngleDegrees());
+        SmartDashboard.putNumber("Swerve/BL/ActualAngleDeg", m_swerveModule3.getActualAngleDegrees());
+        SmartDashboard.putNumber("Swerve/BR/ActualAngleDeg", m_swerveModule4.getActualAngleDegrees());
+
         SmartDashboard.putNumber("VisionLastTimestamp", m_lastVisionTimestampSeconds);
         SmartDashboard.putNumber("VisionAcceptedCount", m_visionAcceptedCount);
     }
