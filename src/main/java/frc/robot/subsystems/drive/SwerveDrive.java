@@ -2,6 +2,7 @@ package frc.robot.subsystems.drive;
 
 import java.util.function.DoubleSupplier;
 
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
@@ -29,6 +30,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.Constants.RuntimeConstants;
 import frc.robot.Constants.SwerveConstants;
 
 public class SwerveDrive {
@@ -73,7 +75,7 @@ public class SwerveDrive {
             SwerveConstants.kBackRightDriveInverted);
 
     private final SwerveDriveKinematics m_kinematics = SwerveConstants.kKinematics;
-    private final Pigeon2 m_gyro = new Pigeon2(SwerveConstants.kPigeonID, SwerveConstants.kCANbus);
+    private final Pigeon2 m_gyro = new Pigeon2(SwerveConstants.kPigeonID, new CANBus(SwerveConstants.kCANbus));
     private SwerveDrivePoseEstimator m_poseEstimator;
 
     private SwerveModulePosition[] m_cachedPositions = new SwerveModulePosition[4];
@@ -93,6 +95,8 @@ public class SwerveDrive {
     private double m_deadband = 0.1d;
     private boolean m_fieldRelativeTeleop = true;
     private boolean m_useFixedOmega = false;
+    private boolean m_useReducedVelocity = false;
+    private double m_reducedVelocityScale = 0.45;
     private final PIDController m_headingController = new PIDController(4.0, 0.0, 0.1);
 
     private enum AimMode {
@@ -158,7 +162,9 @@ public class SwerveDrive {
                     m_requirements
             );
         } catch (Exception e) {
-            e.printStackTrace();
+            DriverStation.reportError(
+                    "Failed to configure PathPlanner AutoBuilder: " + e.getMessage(),
+                    e.getStackTrace());
         }
     }
 
@@ -193,14 +199,16 @@ public class SwerveDrive {
         }
         m_lastDashboardPublishTimeSeconds = nowSeconds;
 
-        boolean FRT = SmartDashboard.getBoolean("FieldRelativeTeleop", m_fieldRelativeTeleop);
-        if (FRT != m_fieldRelativeTeleop) {
-            m_fieldRelativeTeleop = FRT;
-        }
+        if (RuntimeConstants.kEnableLiveTuning) {
+            boolean FRT = SmartDashboard.getBoolean("FieldRelativeTeleop", m_fieldRelativeTeleop);
+            if (FRT != m_fieldRelativeTeleop) {
+                m_fieldRelativeTeleop = FRT;
+            }
 
-        double DZ = SmartDashboard.getNumber("DeadZone", m_deadband);
-        if (DZ != m_deadband) {
-            m_deadband = DZ;
+            double DZ = SmartDashboard.getNumber("DeadZone", m_deadband);
+            if (DZ != m_deadband) {
+                m_deadband = DZ;
+            }
         }
 
         SmartDashboard.putNumber("Gyro (deg)", m_cachedRotation.getDegrees());
@@ -308,8 +316,9 @@ public class SwerveDrive {
 
     private void executeTeleopDrive() {
         m_idleApplied = false;
-        double x = m_joystickX * SwerveConstants.kDriveMaxSpeed;
-        double y = m_joystickY * SwerveConstants.kDriveMaxSpeed;
+        double velocityScale = m_useReducedVelocity ? m_reducedVelocityScale : 1.0;
+        double x = m_joystickX * SwerveConstants.kDriveMaxSpeed * velocityScale;
+        double y = m_joystickY * SwerveConstants.kDriveMaxSpeed * velocityScale;
         double omega = m_joystickOmega * SwerveConstants.kTurnMaxSpeed;
 
         if (m_useFixedOmega) {
@@ -321,8 +330,9 @@ public class SwerveDrive {
     
     private void executeDPadDrive() {
         m_idleApplied = false;
-        double x = m_dPadXValue * SwerveConstants.kDriveMaxSpeed * kDPadDriveScale;
-        double y = m_dPadYValue * SwerveConstants.kDriveMaxSpeed * kDPadDriveScale;
+        double velocityScale = m_useReducedVelocity ? m_reducedVelocityScale : 1.0;
+        double x = m_dPadXValue * SwerveConstants.kDriveMaxSpeed * kDPadDriveScale * velocityScale;
+        double y = m_dPadYValue * SwerveConstants.kDriveMaxSpeed * kDPadDriveScale * velocityScale;
         setSwerveModuleStates(drive(x, y, 0d, false, kLoopPeriodSeconds));
     }
 
@@ -436,6 +446,14 @@ public class SwerveDrive {
             m_headingController.reset();
             m_lastAimOmega = 0.0;
         }
+    }
+
+    public void setUseReducedVelocity(boolean useReducedVelocity) {
+        m_useReducedVelocity = useReducedVelocity;
+    }
+
+    public void setReducedVelocityScale(double reducedVelocityScale) {
+        m_reducedVelocityScale = MathUtil.clamp(reducedVelocityScale, 0.1, 1.0);
     }
 
     /**

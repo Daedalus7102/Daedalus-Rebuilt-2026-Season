@@ -1,16 +1,18 @@
 package frc.robot.subsystems.drive;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.SparkMax;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -50,8 +52,9 @@ public class SwerveModule {
             .p(SwerveConstants.kDriveP)
             .i(SwerveConstants.kDriveI)
             .d(SwerveConstants.kDriveD)
-            .velocityFF(SwerveConstants.kDriveFF)
             .outputRange(-1, 1);
+        m_driveMotorConfig.closedLoop.feedForward
+            .kV(SwerveConstants.kDriveFF);
         m_driveMotorConfig.encoder
             .positionConversionFactor(SwerveConstants.kDriveGearRatio)
             .velocityConversionFactor(SwerveConstants.kDriveVelocityFactor);
@@ -79,7 +82,7 @@ public class SwerveModule {
 
         // Absolute Encoder
         m_offset = turnEncoderOffset;
-        m_turnEncoder = new CANcoder(CANcoderID, SwerveConstants.kCANbus);
+        m_turnEncoder = new CANcoder(CANcoderID, new CANBus(SwerveConstants.kCANbus));
         m_turnEncoderConfig = new CANcoderConfiguration();
         m_turnEncoderConfig
             .MagnetSensor.MagnetOffset = m_offset;
@@ -118,30 +121,31 @@ public class SwerveModule {
 
     // Set to Desired State
     public void setDesiredState(SwerveModuleState desired) {
-        m_moduleState = desired;
-        var current = Rotation2d.fromDegrees(m_turnRelativeEncoder.getPosition());
-        desired.optimize(current);
+        double currentAzimuthDeg = m_turnRelativeEncoder.getPosition();
+        var current = Rotation2d.fromDegrees(currentAzimuthDeg);
+        SwerveModuleState optimizedDesired = new SwerveModuleState(
+            desired.speedMetersPerSecond,
+            desired.angle);
+        optimizedDesired.optimize(current);
+        m_moduleState = new SwerveModuleState(
+            optimizedDesired.speedMetersPerSecond,
+            optimizedDesired.angle);
 
-        m_driveMotor.getClosedLoopController().setReference(
-            desired.speedMetersPerSecond, 
+        m_driveMotor.getClosedLoopController().setSetpoint(
+            optimizedDesired.speedMetersPerSecond,
             SparkMax.ControlType.kVelocity);
-        double setPoint = 
-            m_turnRelativeEncoder.getPosition() + 
-            optimizeOptimize(desired.angle.getDegrees(), m_turnEncoder.getAbsolutePosition().getValueAsDouble() * 360);
-        m_turnMotor.getClosedLoopController().setReference(
+
+        // Keep the fast control loop on the relative encoder to avoid unnecessary CANcoder reads.
+        // CANcoder absolute is used for initial alignment in syncAzimuthToAbsolute().
+        double deltaDeg = MathUtil.inputModulus(
+            optimizedDesired.angle.getDegrees() - currentAzimuthDeg,
+            -180.0,
+            180.0);
+        double setPoint = currentAzimuthDeg + deltaDeg;
+
+        m_turnMotor.getClosedLoopController().setSetpoint(
             setPoint,
             SparkMax.ControlType.kPosition);
-    }
-
-    // Optimize Angle to Prevent Over Rotation
-    private double optimizeOptimize(double desireAngle, double absoluteAngle){
-        double angle = Math.abs(absoluteAngle-desireAngle);
-        if(desireAngle < absoluteAngle && angle < 180){ angle = -angle;}else
-        if(!(angle < 180)){
-            angle = 360-angle;
-            if(desireAngle > absoluteAngle){ angle = -angle;}
-        } 
-        return angle;
     }
 
     // Coordinates Encoder Position

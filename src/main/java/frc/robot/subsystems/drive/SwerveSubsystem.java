@@ -83,6 +83,14 @@ public class SwerveSubsystem extends SubsystemBase {
         m_drive.setUseFixedOmega(useFixedOmega);
     }
 
+    public void setUseReducedVelocity(boolean useReducedVelocity) {
+        m_drive.setUseReducedVelocity(useReducedVelocity);
+    }
+
+    public void setReducedVelocityScale(double reducedVelocityScale) {
+        m_drive.setReducedVelocityScale(reducedVelocityScale);
+    }
+
     /** Teleop convenience wrapper (angle interpreted with teleop framing rules). */
     public void driveFacingAngle(Rotation2d targetHeading) {
         m_drive.driveFacingAngle(targetHeading);

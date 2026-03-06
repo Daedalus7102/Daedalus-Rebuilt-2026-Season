@@ -35,6 +35,7 @@ public class RobotContainer {
 
 	// Example field point to aim at
 	private static final Translation2d kLookAtPoint = new Translation2d(8.27, 4.10);
+	private static final double kReducedDriveScale = 0.50;
 	private AimOverrideButton m_activeAimOverrideButton = AimOverrideButton.NONE;
 
 	// Autonomous
@@ -48,6 +49,7 @@ public class RobotContainer {
 		NamedCommands.registerCommand("AimSpeakerOff", m_swerveSubsystem.disableAutoAim());
 		NamedCommands.registerCommand("AimForwardOn", m_swerveSubsystem.enableAutoAimAtAngle(Rotation2d.fromDegrees(0.0)));
 		NamedCommands.registerCommand("AimForwardOff", m_swerveSubsystem.disableAutoAim());
+		m_swerveSubsystem.setReducedVelocityScale(kReducedDriveScale);
 		
 		configureBindings();
 
@@ -77,6 +79,10 @@ public class RobotContainer {
 
 		m_driverController.R1().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
 		m_driverController.R1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
+
+		// Hold R2 for precision/slow translation driving.
+		m_driverController.R2().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setUseReducedVelocity(true), m_swerveSubsystem));
+		m_driverController.R2().onFalse(Commands.runOnce(() -> m_swerveSubsystem.setUseReducedVelocity(false), m_swerveSubsystem));
 
 		// Zero gyro heading on button press.
 		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
@@ -128,11 +134,13 @@ public class RobotContainer {
 
 	public void onAutonomousInit() {
 		m_swerveSubsystem.disableAutoAimNow();
+		m_swerveSubsystem.setUseReducedVelocity(false);
 		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.AUTO));
 	}
 
 	public void onTeleopInit() {
 		m_swerveSubsystem.disableAutoAimNow();
+		m_swerveSubsystem.setUseReducedVelocity(false);
 		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.IDLE));
 	}
 

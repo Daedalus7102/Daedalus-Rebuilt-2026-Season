@@ -4,6 +4,14 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 
 public class Constants {
+    public static class RuntimeConstants {
+        /**
+         * When true, selected parameters can be changed live from SmartDashboard.
+         * Keep this true for current behavior parity; set false for competition lock-down.
+         */
+        public static final boolean kEnableLiveTuning = true;
+    }
+
     // Drive Constants
     public static class SwerveConstants {
         // Chassis Constraints
@@ -15,7 +23,7 @@ public class Constants {
         public static final double kDriveMaxAcc = 0.6; // Maximum drive acceleration in meters per second squared
         public static final double kDriveGearRatio = 1d/6.75d; // 5.36;
         public static final double kTurnMaxSpeed = Math.PI*2; // Maximum turn speed in radians per second
-        public static final double kTurnMaxAcc = 0.15; // Maximum turn acceleration in degrees per second squared
+        public static final double kTurnMaxAcc = 0.15; // Maximum turn acceleration in radians per second squared
         public static final double kTurnGearRatio = 150d/7d;
         // Drive encoder
         public static final double kDriveVelocityFactor = (kDriveGearRatio * kWheelCircumference) / 60.0; // m/s per RPM
@@ -70,12 +78,12 @@ public class Constants {
         // Turning Motor PID Constants
         public static final double kTurnP = 0.01, kTurnI = 0.0, kTurnD = 0.0;
         // Drive Motor Configuration
-        public static final int kDriveCurrentLimitA = 35;
+        public static final int kDriveCurrentLimitA = 40;
         public static final double kDriveVoltageComp = 12.0;
         public static final double kDriveOpenLoopRamp = 0.5;
         public static final double kDriveClosedLoopRamp = 0.5;
         // Turning Motor Configuration
-        public static final int kTurnCurrentLimitA = 25;
+        public static final int kTurnCurrentLimitA = 30;
         public static final double kTurnVoltageComp = 12.0;
         public static final double kTurnOpenLoopRamp = 0.15;
         public static final double kTurnClosedLoopRamp = 0.15;

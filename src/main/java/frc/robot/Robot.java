@@ -5,6 +5,8 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
@@ -18,6 +20,12 @@ public class Robot extends TimedRobot {
 
   private final RobotContainer m_robotContainer;
   private final Runnable m_dashboardLoop;
+  private double m_lastLoopTimestampSeconds = 0.0;
+  private double m_lastLoopDiagPublishSeconds = 0.0;
+  private int m_loopOverrunCount = 0;
+
+  private static final double kLoopOverrunThresholdSeconds = 0.022;
+  private static final double kLoopDiagPublishPeriodSeconds = 0.5;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -39,12 +47,25 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    double nowSeconds = Timer.getFPGATimestamp();
+    double loopDtSeconds = nowSeconds - m_lastLoopTimestampSeconds;
+    if (m_lastLoopTimestampSeconds > 0.0 && loopDtSeconds > kLoopOverrunThresholdSeconds) {
+      m_loopOverrunCount++;
+    }
+    m_lastLoopTimestampSeconds = nowSeconds;
+
     // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
     // commands, running already-scheduled commands, removing finished or interrupted commands,
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
     m_dashboardLoop.run();
+
+    if (nowSeconds - m_lastLoopDiagPublishSeconds >= kLoopDiagPublishPeriodSeconds) {
+      SmartDashboard.putNumber("RobotLoopDtMs", loopDtSeconds * 1000.0);
+      SmartDashboard.putNumber("RobotLoopOverruns", m_loopOverrunCount);
+      m_lastLoopDiagPublishSeconds = nowSeconds;
+    }
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
