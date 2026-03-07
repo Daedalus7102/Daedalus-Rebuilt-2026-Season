@@ -93,8 +93,8 @@ public class Constants {
 		public static final int indexerMotorID = 21;
 		public static final int feederMotorID = 20;
 
-		public static final double maxHoodAngle = 0.3967;
-		public static final double minHoodAngle = 0.3931;
+		public static final double maxHoodAngle = 21;
+		public static final double minHoodAngle = 0;
 
         // Shooter motor configuration
         public static final int shootCurrentLimit = 35;
@@ -109,7 +109,7 @@ public class Constants {
 		public static final double shooterKV = 0.0004;
 
         // Shooter hood closed-loop (Position control through absolute encoder)
-        public static final double hoodP = 0;
+        public static final double hoodP = 0.1;
         public static final double hoodI = 0;
         public static final double hoodD = 0;
         public static final double hoodKV = 0;

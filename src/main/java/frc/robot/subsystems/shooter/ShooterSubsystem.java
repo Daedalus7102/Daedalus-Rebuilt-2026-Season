@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.FeedbackSensor;
@@ -7,6 +8,7 @@ import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
+import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -23,6 +25,8 @@ public class ShooterSubsystem extends SubsystemBase {
 	private final SparkFlexConfig shooterMotorConfig2;
 	private final SparkFlexConfig shooterMotorConfig3;
 	private final SparkFlexConfig hoodMotorConfig;
+
+	private final AbsoluteEncoder hoodEncoder;
 
 	public ShooterSubsystem() {
 		shooterMotor1 = new SparkFlex(ShooterConstants.shootMotor1ID, SparkLowLevel.MotorType.kBrushless);
@@ -70,6 +74,9 @@ public class ShooterSubsystem extends SubsystemBase {
 
 		hoodMotor = new SparkFlex(ShooterConstants.hoodMotorID, SparkLowLevel.MotorType.kBrushless);
 		hoodMotorConfig = new SparkFlexConfig();
+		hoodEncoder = hoodMotor.getAbsoluteEncoder();
+
+		hoodMotorConfig.absoluteEncoder.positionConversionFactor(360);
 
 		hoodMotorConfig.closedLoop
 				.feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
