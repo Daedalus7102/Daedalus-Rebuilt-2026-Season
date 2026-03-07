@@ -8,6 +8,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -23,12 +24,20 @@ public class FeederSubsystem extends SubsystemBase {
 	public FeederSubsystem() {
 		indexerMotor = new SparkFlex(Constants.ShooterConstants.indexerMotorID, SparkLowLevel.MotorType.kBrushless);
 		indexerMotorConfig = new SparkFlexConfig();
-		indexerMotorConfig.idleMode(SparkBaseConfig.IdleMode.kCoast);
+		indexerMotorConfig
+		.idleMode(SparkBaseConfig.IdleMode.kCoast)
+		.smartCurrentLimit(35)
+		.voltageCompensation(12)
+		.inverted(true);
 		indexerMotor.configure(indexerMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
 		feederMotor = new SparkMax(Constants.ShooterConstants.feederMotorID, SparkLowLevel.MotorType.kBrushless);
 		feederMotorConfig = new SparkMaxConfig();
-		feederMotorConfig.idleMode(SparkBaseConfig.IdleMode.kCoast);
+		feederMotorConfig
+		.idleMode(SparkBaseConfig.IdleMode.kCoast)
+		.smartCurrentLimit(35)
+		.voltageCompensation(12)
+		.inverted(false);
 		feederMotor.configure(feederMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 	}
 
@@ -45,6 +54,10 @@ public class FeederSubsystem extends SubsystemBase {
 	public void disable() {
 		indexerMotor.stopMotor();
 		feederMotor.stopMotor();
+	}
+
+	public void unclog() {
+		indexerMotor.set(-0.6);
 	}
 
 	@Override

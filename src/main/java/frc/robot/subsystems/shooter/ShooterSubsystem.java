@@ -8,9 +8,9 @@ import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
-import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkFlexConfig;
+
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
@@ -98,6 +98,12 @@ public class ShooterSubsystem extends SubsystemBase {
 		shooterMotor3.stopMotor();
 
 		hoodMotor.getClosedLoopController().setSetpoint(ShooterConstants.minHoodAngle, ControlType.kPosition);
+	}
+
+	public void unclog() {
+		shooterMotor1.getClosedLoopController().setSetpoint(ShooterConstants.unclogRPM, ControlType.kVelocity);
+		shooterMotor2.getClosedLoopController().setSetpoint(ShooterConstants.unclogRPM, ControlType.kVelocity);
+		shooterMotor3.getClosedLoopController().setSetpoint(ShooterConstants.unclogRPM, ControlType.kVelocity);
 	}
 
 	public void setShooterRPM(double rpm) {

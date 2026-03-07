@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.subsystems.commands.FeedShooter;
 import frc.robot.subsystems.commands.SpoolShooter;
+import frc.robot.subsystems.commands.UnclogShooter;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.shooter.FeederSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
@@ -22,7 +23,7 @@ public class RobotContainer {
 
 	// Controllers
 	public static final CommandPS5Controller m_driverController = new CommandPS5Controller(0);
-	// public static final CommandPS5Controller m_operatorController = new CommandPS5Controller(1);
+	public static final CommandPS5Controller m_operatorController = new CommandPS5Controller(1);
 
 	// Subsystems
 	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
@@ -59,6 +60,7 @@ public class RobotContainer {
 		m_driverController.triangle().whileTrue(new FeedShooter(m_FeederSubsystem, m_ShooterSubsystem, false));
 
 		// Operator Controller
+		m_operatorController.triangle().whileTrue(new UnclogShooter(m_ShooterSubsystem, m_FeederSubsystem));
 	}
 
 	private double dPadXFromPov(int pov) {

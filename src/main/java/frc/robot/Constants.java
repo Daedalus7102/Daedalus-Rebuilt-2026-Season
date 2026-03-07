@@ -117,10 +117,11 @@ public class Constants {
 		public static final double shooterTargetRPM = 5000;
 		public static final double shooterReadyToleranceRPM = 500;
 		public static final double shooterMinRPM = 1000;
+        public static final double unclogRPM = -4000;
 
         // Feeder & Indexer
         public static final double feederSpeed = 0.30;
-        public static final double indexerSpeed = -0.40;
+        public static final double indexerSpeed = 0.40;
 
 		public static final double feedingShooterRPM = shooterTargetRPM;
         public static final double feedingHoodAngle = 0;
