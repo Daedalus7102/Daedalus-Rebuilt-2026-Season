@@ -84,6 +84,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public void updateDashboard() {
         SmartDashboard.putNumber("IntakePosition", m_pivotEncoder.getPosition());
+        SmartDashboard.putNumber("IntakePivotCurrent", getPivotCurrent());
     }
 
     public double getPivotPosition() {
@@ -93,6 +94,10 @@ public class IntakeSubsystem extends SubsystemBase {
     public void setPivotPosition(double targetPosition) {
         double clampedTarget = MathUtil.clamp(targetPosition, kPivotMinLimit, kPivotMaxLimit);
         m_pivotMotor.getClosedLoopController().setReference(clampedTarget, SparkMax.ControlType.kPosition);
+    }
+
+    public double getPivotCurrent() {
+        return m_pivotMotor.getOutputCurrent();
     }
 
     public void intakeOut() {
