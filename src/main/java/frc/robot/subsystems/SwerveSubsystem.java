@@ -55,7 +55,7 @@ public class SwerveSubsystem extends SubsystemBase {
 				MathUtil.applyDeadband(joystickY.getAsDouble() * 4 * inputMultiplier, 0.1),
 				MathUtil.applyDeadband(joystickX.getAsDouble() * 4 * inputMultiplier, 0.1)
 		);
-		double rotation = joystickRotation.getAsDouble() * 6 * inputMultiplier;
+		double rotation = MathUtil.applyDeadband(joystickRotation.getAsDouble() * 6 * inputMultiplier, 0.1);
 
 		SmartDashboard.putNumber("Translation X", translation.getX());
 		SmartDashboard.putNumber("Translation Y", translation.getY());

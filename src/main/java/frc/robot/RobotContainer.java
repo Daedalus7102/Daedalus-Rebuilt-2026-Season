@@ -21,9 +21,9 @@ public class RobotContainer {
 
 	// Subsystems
 	private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem(
-			() -> m_driverController.getHID().getLeftX(),
-			() -> m_driverController.getHID().getLeftY(),
-			() -> m_driverController.getHID().getRightX()
+			() -> -m_driverController.getHID().getLeftX(),
+			() -> -m_driverController.getHID().getLeftY(),
+			() -> -m_driverController.getHID().getRightX()
 	);
 
 	// Example field point to aim at
