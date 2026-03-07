@@ -117,6 +117,10 @@ public class ShooterSubsystem extends SubsystemBase {
 		return Math.abs(getShooterRPM() - targetRPM) <= toleranceRPM;
 	}
 
+	public double getTargetRPM() {
+		return shooterMotor1.getClosedLoopController().getSetpoint();
+	}
+
 	public void setHoodAngle(double angle) {
 		hoodMotor.getClosedLoopController().setSetpoint(
 				Math.max(Math.min(angle, ShooterConstants.maxHoodAngle), ShooterConstants.minHoodAngle),

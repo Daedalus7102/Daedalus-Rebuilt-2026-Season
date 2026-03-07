@@ -103,10 +103,10 @@ public class Constants {
 
 		// Shooter closed-loop (Spark velocity control in RPM)
 		// 1:1
-		public static final double shooterP = 0.001;
+		public static final double shooterP = 0.0025;
 		public static final double shooterI = 0.0;
-		public static final double shooterD = 0.0;
-		public static final double shooterKV = 0.0002;
+		public static final double shooterD = 0.002;
+		public static final double shooterKV = 0.0004;
 
         // Shooter hood closed-loop (Position control through absolute encoder)
         public static final double hoodP = 0;
@@ -115,7 +115,8 @@ public class Constants {
         public static final double hoodKV = 0;
 
 		public static final double shooterTargetRPM = 5000;
-		public static final double shooterReadyToleranceRPM = 100;
+		public static final double shooterReadyToleranceRPM = 500;
+		public static final double shooterMinRPM = 1000;
 
         // Feeder & Indexer
         public static final double feederSpeed = 0.30;

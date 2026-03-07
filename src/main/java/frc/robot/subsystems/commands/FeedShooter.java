@@ -21,7 +21,7 @@ public class FeedShooter extends Command {
 
 	@Override
 	public void execute() {
-		if (shooter.isAtTargetRPM(Constants.ShooterConstants.shooterReadyToleranceRPM) || !block) {
+		if ((shooter.isAtTargetRPM(Constants.ShooterConstants.shooterReadyToleranceRPM) && shooter.getTargetRPM() > Constants.ShooterConstants.shooterMinRPM) || !block) {
 			feeder.enable();
 		} else {
 			feeder.disable();

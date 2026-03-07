@@ -54,9 +54,9 @@ public class RobotContainer {
 				() -> dPadYFromPov(m_driverController.getHID().getPOV())
 		);
 
-		m_driverController.R2().whileTrue(new SpoolShooter(m_ShooterSubsystem, () -> 1));
+		m_driverController.R2().whileTrue(new SpoolShooter(m_ShooterSubsystem, () -> 5));
 		m_driverController.cross().whileTrue(new FeedShooter(m_FeederSubsystem, m_ShooterSubsystem, true));
-		//m_driverController.triangle().whileTrue(new FeedShooter(m_FeederSubsystem, m_ShooterSubsystem, false));
+		m_driverController.triangle().whileTrue(new FeedShooter(m_FeederSubsystem, m_ShooterSubsystem, false));
 
 		// Operator Controller
 	}
