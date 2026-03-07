@@ -4,9 +4,6 @@
 
 package frc.robot;
 
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.auto.NamedCommands;
-
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -34,18 +31,12 @@ public class RobotContainer {
 	private static final double kReducedDriveScale = 0.50;
 
 	// Autonomous
-	private SendableChooser<Command> m_autoChooser;
 
 	public RobotContainer() {
-		NamedCommands.registerCommand("nothing", Commands.sequence(
-		));
 		// Autonomous event markers: explicit field-based aiming helpers.
 
 		configureBindings();
 		swerveSubsystem.setHubPos(kLookAtPoint);
-
-		m_autoChooser = AutoBuilder.buildAutoChooser();
-		SmartDashboard.putData("AutoR", m_autoChooser);
 	}
 
 	private void configureBindings() {
@@ -71,10 +62,6 @@ public class RobotContainer {
 			case 45, 90, 135 -> -1.0;
 			default -> 0.0;
 		};
-	}
-
-	public Command getAutonomousCommand() {
-		return m_autoChooser.getSelected();
 	}
 
 	public void onAutonomousInit() {

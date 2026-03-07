@@ -1,8 +1,10 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import swervelib.SwerveDrive;
@@ -31,6 +33,7 @@ public class SwerveSubsystem extends SubsystemBase {
 	private DoubleSupplier joystickX, joystickY, joystickRotation;
 	private DriveMode driveMode = DriveMode.FIELD_RELATIVE;
 	private Translation2d hubPos = new Translation2d(0, 0);
+	private double inputMultiplier = 1;
 
 	private final SwerveDrive swerveDrive;
 
@@ -48,8 +51,16 @@ public class SwerveSubsystem extends SubsystemBase {
 
 	@Override
 	public void periodic() {
-		Translation2d translation = new Translation2d(joystickX.getAsDouble(), joystickY.getAsDouble());
-		double rotation = joystickRotation.getAsDouble();
+		Translation2d translation = new Translation2d(
+				MathUtil.applyDeadband(joystickY.getAsDouble() * 4 * inputMultiplier, 0.1),
+				MathUtil.applyDeadband(joystickX.getAsDouble() * 4 * inputMultiplier, 0.1)
+		);
+		double rotation = joystickRotation.getAsDouble() * 6 * inputMultiplier;
+
+		SmartDashboard.putNumber("Translation X", translation.getX());
+		SmartDashboard.putNumber("Translation Y", translation.getY());
+		SmartDashboard.putNumber("Rotation", rotation);
+		SmartDashboard.putString("Mode", driveMode.name());
 		switch (driveMode) {
 			case FIELD_RELATIVE:
 				driveFieldRelative(translation, rotation);
