@@ -16,22 +16,22 @@ import frc.robot.Constants.IntakeConstants;
 public class IntakeSubsystem extends SubsystemBase {
     // Pivot limits and presets (relative encoder rotations)
     public static final double kPivotInPosition = 0.0;
-    public static final double kPivotOutPosition = 1.2;
+    public static final double kPivotOutPosition = 19.8;
     public static final double kPivotMinLimit = 0.0;
-    public static final double kPivotMaxLimit = 2.5;
+    public static final double kPivotMaxLimit = 20;
 
-    private static final double kPivotP = 5.0;
+    private static final double kPivotP = 0.04;
 
     private final SparkMax m_pivotMotor;
     private final SparkMax m_pivotFollowerMotor;
     private final SparkMax m_rollerMotor;
-    private final RelativeEncoder m_pivotRelativeEncoder;
+    private final RelativeEncoder m_pivotEncoder;
 
     public IntakeSubsystem() {
         // Pivot motor (intake in/out)
         m_pivotMotor = new SparkMax(IntakeConstants.kRotateMotorID, MotorType.kBrushless);
-        m_pivotFollowerMotor = new SparkMax(IntakeConstants.kFeederMotorID, MotorType.kBrushless);
-        m_pivotRelativeEncoder = m_pivotMotor.getAlternateEncoder();
+        m_pivotFollowerMotor = new SparkMax(IntakeConstants.kRotateFollowerMotorID, MotorType.kBrushless);
+        m_pivotEncoder = m_pivotMotor.getEncoder();
 
         SparkMaxConfig pivotConfig = new SparkMaxConfig();
         pivotConfig
@@ -40,7 +40,7 @@ public class IntakeSubsystem extends SubsystemBase {
             .inverted(true);
 
         pivotConfig.closedLoop
-            .feedbackSensor(FeedbackSensor.kAlternateOrExternalEncoder)
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .p(kPivotP)
             .i(0.0)
             .d(0.0)
@@ -52,9 +52,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
         pivotConfig.softLimit
             .forwardSoftLimit(kPivotMaxLimit)
-            .forwardSoftLimitEnabled(false)
+            .forwardSoftLimitEnabled(true)
             .reverseSoftLimit(kPivotMinLimit)
-            .reverseSoftLimitEnabled(false);
+            .reverseSoftLimitEnabled(true);
 
         m_pivotMotor.configure(pivotConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
@@ -83,11 +83,11 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public void updateDashboard() {
-        SmartDashboard.putNumber("IntakePosition", m_pivotRelativeEncoder.getPosition());
+        SmartDashboard.putNumber("IntakePosition", m_pivotEncoder.getPosition());
     }
 
     public double getPivotPosition() {
-        return m_pivotRelativeEncoder.getPosition();
+        return m_pivotEncoder.getPosition();
     }
 
     public void setPivotPosition(double targetPosition) {
@@ -129,6 +129,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
     /** Call when the mechanism is physically in to re-zero position tracking. */
     public void zeroPivotAtInPosition() {
-        m_pivotRelativeEncoder.setPosition(kPivotInPosition);
+        m_pivotEncoder.setPosition(kPivotInPosition);
     }
 }

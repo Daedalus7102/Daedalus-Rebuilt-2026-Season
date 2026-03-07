@@ -88,18 +88,20 @@ public class RobotContainer {
 		// Operator Controller
 		// Intake test buttons (driver controller)
 		m_driverController.square()
-			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setRoller(1.0), m_intakeSubsystem))
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setRoller(0.8), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem));
 
 		m_driverController.cross()
 			.onTrue(Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem));
 
 		m_driverController.triangle()
-			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-0.4), m_intakeSubsystem))
+			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-0.8), m_intakeSubsystem))
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotPosition(0), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
 
 		m_driverController.circle()
-			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(0.4), m_intakeSubsystem))
+			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(0.8), m_intakeSubsystem))
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotPosition(19.8), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
 
 		// Zero intake pivot relative encoder at current physical "in" position

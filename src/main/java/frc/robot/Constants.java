@@ -88,8 +88,8 @@ public class Constants {
 
     public static class IntakeConstants {
         // Motor IDs
-        public static final int kRollerMotorID = 11;
+        public static final int kRollerMotorID = 12;
         public static final int kRotateMotorID = 10;
-        public static final int kFeederMotorID = 18;
+        public static final int kRotateFollowerMotorID = 11;
     }
 }
