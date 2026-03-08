@@ -58,10 +58,10 @@ public class SwerveSubsystem extends SubsystemBase {
 	@Override
 	public void periodic() {
 		Translation2d translation = new Translation2d(
-				MathUtil.applyDeadband(joystickY.getAsDouble() * 4 * inputMultiplier, 0.1),
-				MathUtil.applyDeadband(joystickX.getAsDouble() * 4 * inputMultiplier, 0.1)
+				MathUtil.applyDeadband(joystickY.getAsDouble() * 2 * inputMultiplier, 0.1),
+				MathUtil.applyDeadband(joystickX.getAsDouble() * 2 * inputMultiplier, 0.1)
 		);
-		double rotation = MathUtil.applyDeadband(joystickRotation.getAsDouble() * 6 * inputMultiplier, 0.1);
+		double rotation = MathUtil.applyDeadband(joystickRotation.getAsDouble() * 2 * inputMultiplier, 0.1);
 
 		SmartDashboard.putNumber("Translation X", translation.getX());
 		SmartDashboard.putNumber("Translation Y", translation.getY());
