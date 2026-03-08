@@ -14,12 +14,15 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 
@@ -29,6 +32,7 @@ public class Vision {
             AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
 
     public static class Camera {
+        private final String m_name;
         private final PhotonPoseEstimator m_estimator;
         private final PhotonCamera m_camera;
         private final Matrix<N3, N1> m_singleTagDeviation;
@@ -40,6 +44,7 @@ public class Vision {
                 Transform3d robotToCamOffset,
                 Matrix<N3, N1> singleTagDeviation,
                 Matrix<N3, N1> multiTagDeviation) {
+            m_name = name;
             m_estimator = new PhotonPoseEstimator(kFieldLayout, robotToCamOffset);
             m_camera = new PhotonCamera(name);
             m_singleTagDeviation = singleTagDeviation;
@@ -106,6 +111,14 @@ public class Vision {
         public Matrix<N3, N1> getCurrentDeviation() {
             return m_currentDeviation;
         }
+
+        public boolean isConnected() {
+            return m_camera.isConnected();
+        }
+
+        public String getName() {
+            return m_name;
+        }
     }
 
     private final Camera[] m_cameras = {
@@ -128,15 +141,65 @@ public class Vision {
     }
 
     public void updatePose() {
+        boolean anyPoseThisCycle = false;
+        int acceptedCountThisCycle = 0;
+
         for (Camera camera : m_cameras) {
-            for (PhotonPipelineResult result : camera.getResults()) {
+            String cameraPrefix = camera.getName().contains("Left") ? "Left" : "Right";
+            String baseKey = "Vision/" + cameraPrefix + "/";
+
+            List<PhotonPipelineResult> results = camera.getResults();
+            SmartDashboard.putBoolean(baseKey + "Connected", camera.isConnected());
+            SmartDashboard.putNumber(baseKey + "UnreadResults", results.size());
+
+            boolean hasTargets = false;
+            int totalTargets = 0;
+            boolean poseValid = false;
+            Pose2d latestPose = null;
+            double latestTimestamp = -1.0;
+            double latestPoseAgeMs = -1.0;
+
+            for (PhotonPipelineResult result : results) {
+                hasTargets |= result.hasTargets();
+                totalTargets += result.getTargets().size();
+
                 Optional<EstimatedRobotPose> pose = camera.getEstimatedPose(result);
                 camera.updateDeviation(pose, result.getTargets());
-                pose.ifPresent(estimatedPose -> m_swerveSubsystem.addVisionMeasurement(
-                        estimatedPose.estimatedPose.toPose2d(),
-                        estimatedPose.timestampSeconds,
-                        camera.getCurrentDeviation()));
+
+                if (pose.isPresent()) {
+                    EstimatedRobotPose estimatedPose = pose.get();
+                    latestPose = estimatedPose.estimatedPose.toPose2d();
+                    latestTimestamp = estimatedPose.timestampSeconds;
+                    latestPoseAgeMs = (Timer.getFPGATimestamp() - latestTimestamp) * 1000.0;
+                    poseValid = true;
+                    anyPoseThisCycle = true;
+                    acceptedCountThisCycle++;
+
+                    m_swerveSubsystem.addVisionMeasurement(
+                            latestPose,
+                            latestTimestamp,
+                            camera.getCurrentDeviation());
+                }
+            }
+
+            SmartDashboard.putBoolean(baseKey + "HasTargets", hasTargets);
+            SmartDashboard.putNumber(baseKey + "TargetCount", totalTargets);
+            SmartDashboard.putBoolean(baseKey + "PoseValid", poseValid);
+            SmartDashboard.putNumber(baseKey + "Timestamp", latestTimestamp);
+            SmartDashboard.putNumber(baseKey + "PoseAgeMs", latestPoseAgeMs);
+
+            if (latestPose != null) {
+                SmartDashboard.putNumber(baseKey + "PoseX", latestPose.getX());
+                SmartDashboard.putNumber(baseKey + "PoseY", latestPose.getY());
+                SmartDashboard.putNumber(baseKey + "PoseDeg", latestPose.getRotation().getDegrees());
+            } else {
+                SmartDashboard.putNumber(baseKey + "PoseX", Double.NaN);
+                SmartDashboard.putNumber(baseKey + "PoseY", Double.NaN);
+                SmartDashboard.putNumber(baseKey + "PoseDeg", Double.NaN);
             }
         }
+
+        SmartDashboard.putBoolean("Vision/AnyPoseThisCycle", anyPoseThisCycle);
+        SmartDashboard.putNumber("Vision/AcceptedCountCycle", acceptedCountThisCycle);
     }
 }

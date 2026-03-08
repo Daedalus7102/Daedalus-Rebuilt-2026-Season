@@ -1,5 +1,6 @@
 package frc.robot.subsystems.drive;
 
+import java.util.List;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.CANBus;
@@ -23,6 +24,9 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -232,15 +236,15 @@ public class SwerveDrive {
         // SmartDashboard.putNumber("Swerve/BL/ActualVelMps", m_swerveModule3.getActualVelocityMetersPerSecond());
         // SmartDashboard.putNumber("Swerve/BR/ActualVelMps", m_swerveModule4.getActualVelocityMetersPerSecond());
 
-        SmartDashboard.putNumber("Swerve/FL/TargetAngleDeg", m_swerveModule1.getTargetAngleDegrees());
-        SmartDashboard.putNumber("Swerve/FR/TargetAngleDeg", m_swerveModule2.getTargetAngleDegrees());
-        SmartDashboard.putNumber("Swerve/BL/TargetAngleDeg", m_swerveModule3.getTargetAngleDegrees());
-        SmartDashboard.putNumber("Swerve/BR/TargetAngleDeg", m_swerveModule4.getTargetAngleDegrees());
+        // SmartDashboard.putNumber("Swerve/FL/TargetAngleDeg", m_swerveModule1.getTargetAngleDegrees());
+        // SmartDashboard.putNumber("Swerve/FR/TargetAngleDeg", m_swerveModule2.getTargetAngleDegrees());
+        // SmartDashboard.putNumber("Swerve/BL/TargetAngleDeg", m_swerveModule3.getTargetAngleDegrees());
+        // SmartDashboard.putNumber("Swerve/BR/TargetAngleDeg", m_swerveModule4.getTargetAngleDegrees());
 
-        SmartDashboard.putNumber("Swerve/FL/ActualAngleDeg", m_swerveModule1.getActualAngleDegrees());
-        SmartDashboard.putNumber("Swerve/FR/ActualAngleDeg", m_swerveModule2.getActualAngleDegrees());
-        SmartDashboard.putNumber("Swerve/BL/ActualAngleDeg", m_swerveModule3.getActualAngleDegrees());
-        SmartDashboard.putNumber("Swerve/BR/ActualAngleDeg", m_swerveModule4.getActualAngleDegrees());
+        // SmartDashboard.putNumber("Swerve/FL/ActualAngleDeg", m_swerveModule1.getActualAngleDegrees());
+        // SmartDashboard.putNumber("Swerve/FR/ActualAngleDeg", m_swerveModule2.getActualAngleDegrees());
+        // SmartDashboard.putNumber("Swerve/BL/ActualAngleDeg", m_swerveModule3.getActualAngleDegrees());
+        // SmartDashboard.putNumber("Swerve/BR/ActualAngleDeg", m_swerveModule4.getActualAngleDegrees());
 
         SmartDashboard.putNumber("VisionLastTimestamp", m_lastVisionTimestampSeconds);
         SmartDashboard.putNumber("VisionAcceptedCount", m_visionAcceptedCount);
@@ -387,11 +391,22 @@ public class SwerveDrive {
         return m_poseEstimator.getEstimatedPosition();
     }
 
-    /** Draws/updates a line object on the Field2d widget. */
+    /** Draws/updates a trajectory-like line object on the Field2d widget. */
     public void setFieldLine(String objectName, Translation2d startPoint, Translation2d endPoint) {
-        m_field.getObject(objectName).setPoses(
-                new Pose2d(startPoint, Rotation2d.kZero),
-                new Pose2d(endPoint, Rotation2d.kZero));
+        Translation2d delta = endPoint.minus(startPoint);
+        if (delta.getNorm() < 1e-6) {
+            m_field.getObject(objectName).setPoses(new Pose2d(startPoint, Rotation2d.kZero));
+            return;
+        }
+
+        Rotation2d heading = delta.getAngle();
+        Trajectory trajectory = TrajectoryGenerator.generateTrajectory(
+                new Pose2d(startPoint, heading),
+                List.of(),
+                new Pose2d(endPoint, heading),
+                new TrajectoryConfig(2.0, 2.0));
+
+        m_field.getObject(objectName).setTrajectory(trajectory);
     }
 
     public void resetPose(Pose2d pose) {
