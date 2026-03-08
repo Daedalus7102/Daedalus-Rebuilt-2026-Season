@@ -1,7 +1,11 @@
 package frc.robot;
 
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 
 public class Constants {
     public static class RuntimeConstants {
@@ -97,5 +101,12 @@ public class Constants {
         public static final int kRollerMotorID = 12;
         public static final int kRotateMotorID = 10;
         public static final int kRotateFollowerMotorID = 11;
+    }
+
+    public static class VisionConstants {
+        // Baseline confidence when only one tag contributes to the estimate.
+        public static final Matrix<N3, N1> singleTagDeviation = VecBuilder.fill(4, 4, 8);
+        // Higher confidence baseline when multiple tags are used.
+        public static final Matrix<N3, N1> multiTagDeviation = VecBuilder.fill(0.5, 0.5, 1);
     }
 }

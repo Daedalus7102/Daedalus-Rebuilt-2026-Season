@@ -387,6 +387,13 @@ public class SwerveDrive {
         return m_poseEstimator.getEstimatedPosition();
     }
 
+    /** Draws/updates a line object on the Field2d widget. */
+    public void setFieldLine(String objectName, Translation2d startPoint, Translation2d endPoint) {
+        m_field.getObject(objectName).setPoses(
+                new Pose2d(startPoint, Rotation2d.kZero),
+                new Pose2d(endPoint, Rotation2d.kZero));
+    }
+
     public void resetPose(Pose2d pose) {
         m_cachedRotation = m_gyro.getRotation2d();
         readSwerveModulePositions();

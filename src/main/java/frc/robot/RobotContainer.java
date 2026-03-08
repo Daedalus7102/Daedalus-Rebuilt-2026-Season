@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.tools.AllianceTargetPoses;
 
 public class RobotContainer {
 	private enum AimOverrideButton {
@@ -29,7 +30,7 @@ public class RobotContainer {
 
 	// Controllers
 	public static final CommandPS5Controller m_driverController = new CommandPS5Controller(0);
-	// public static final CommandPS5Controller m_operatorController = new CommandPS5Controller(1);
+	public static final CommandPS5Controller m_operatorController = new CommandPS5Controller(1);
 
 	// Subsystems
 	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
@@ -51,6 +52,7 @@ public class RobotContainer {
 		NamedCommands.registerCommand("AimSpeakerOff", m_swerveSubsystem.disableAutoAim());
 		NamedCommands.registerCommand("AimForwardOn", m_swerveSubsystem.enableAutoAimAtAngle(Rotation2d.fromDegrees(0.0)));
 		NamedCommands.registerCommand("AimForwardOff", m_swerveSubsystem.disableAutoAim());
+
 		m_swerveSubsystem.setReducedVelocityScale(kReducedDriveScale);
 		
 		configureBindings();
@@ -61,6 +63,10 @@ public class RobotContainer {
 
 	private void configureBindings() {
 		// Driver Controller
+
+		// Zero gyro heading on button press.
+		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
+
 		m_swerveSubsystem.setJoystickSuppliers(
 			() -> -m_driverController.getHID().getLeftY(),
 			() -> -m_driverController.getHID().getLeftX(),
@@ -71,7 +77,6 @@ public class RobotContainer {
 			() -> dPadYFromPov(m_driverController.getHID().getPOV())
 		);
 
-		// Teleop convenience wrappers (driver intent first):
 		// Last pressed aim button wins.
 		m_driverController.L1().onTrue(Commands.runOnce(() -> {
 			setAimOverride(AimOverrideButton.L1);
@@ -79,29 +84,30 @@ public class RobotContainer {
 		}, m_swerveSubsystem, m_intakeSubsystem));
 		m_driverController.L1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
 
+		// Publish current distance to alliance tower and draw line robot->tower on Field2d.
+		m_driverController.square().onTrue(Commands.runOnce(this::updateTowerDistanceDashboard, m_swerveSubsystem));
+
 		m_driverController.L2().onTrue(Commands.runOnce(() -> {
 			setAimOverride(AimOverrideButton.L2);
 			m_intakeSubsystem.intakeOut();
 		}, m_swerveSubsystem, m_intakeSubsystem));
 		m_driverController.L2().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
 
-		m_driverController.R1().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
-		m_driverController.R1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
+		// m_driverController.R1().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
+		// m_driverController.R1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
 
-		// Hold R2 for precision/slow translation driving.
-		m_driverController.R2().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setUseReducedVelocity(true), m_swerveSubsystem));
-		m_driverController.R2().onFalse(Commands.runOnce(() -> m_swerveSubsystem.setUseReducedVelocity(false), m_swerveSubsystem));
+		// // Hold R2 for precision/slow translation driving.
+		// m_driverController.R2().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setUseReducedVelocity(true), m_swerveSubsystem));
+		// m_driverController.R2().onFalse(Commands.runOnce(() -> m_swerveSubsystem.setUseReducedVelocity(false), m_swerveSubsystem));
 
-		// Zero gyro heading on button press.
-		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
 
 		// Operator Controller
 		// Intake test buttons (driver controller)
-		m_driverController.square()
-			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setRoller(0.8), m_intakeSubsystem))
+		m_operatorController.square()
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setRoller(1.0), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem));
 
-		m_driverController.cross()
+		m_operatorController.L2()
 			.whileTrue(Commands.startEnd(
 				() -> {
 					m_intakeSubsystem.intakeOut();
@@ -111,12 +117,12 @@ public class RobotContainer {
 				m_intakeSubsystem
 			));
 
-		m_driverController.triangle()
+		m_operatorController.triangle()
 			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-0.8), m_intakeSubsystem))
 			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotPosition(0), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
 
-		m_driverController.circle()
+		m_operatorController.circle()
 			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(0.8), m_intakeSubsystem))
 			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotPosition(19), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
@@ -142,6 +148,15 @@ public class RobotContainer {
 			m_activeAimOverrideButton = AimOverrideButton.NONE;
 			m_swerveSubsystem.setUseFixedOmega(false);
 		}
+	}
+
+	private void updateTowerDistanceDashboard() {
+		Translation2d robotTranslation = m_swerveSubsystem.getPose().getTranslation();
+		Translation2d towerTranslation = AllianceTargetPoses.getTowerTranslationForCurrentAlliance();
+		double distanceMeters = AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.getPose());
+
+		SmartDashboard.putNumber("AllianceTowerDistanceM", distanceMeters);
+		m_swerveSubsystem.setFieldLine("AllianceTowerLine", robotTranslation, towerTranslation);
 	}
 
 	private double dPadXFromPov(int pov) {

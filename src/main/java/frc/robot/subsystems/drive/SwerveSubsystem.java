@@ -12,16 +12,20 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.camera.Vision;
 
 public class SwerveSubsystem extends SubsystemBase {
     private final SwerveDrive m_drive;
+    private final Vision m_vision;
 
     public SwerveSubsystem() {
         m_drive = new SwerveDrive(this);
+        m_vision = new Vision(this);
     }
 
     @Override
     public void periodic() {
+        m_vision.updatePose();
         m_drive.periodic();
     }
 
@@ -43,6 +47,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public Pose2d getPose() {
         return m_drive.getPose();
+    }
+
+    public void setFieldLine(String objectName, Translation2d startPoint, Translation2d endPoint) {
+        m_drive.setFieldLine(objectName, startPoint, endPoint);
     }
 
     public void resetPose(Pose2d pose) {
