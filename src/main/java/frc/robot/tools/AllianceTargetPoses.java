@@ -16,8 +16,8 @@ public final class AllianceTargetPoses {
     private AllianceTargetPoses() {}
 
     // TODO: Tune these placeholder coordinates.
-    private static final Translation2d kBlueTower = new Translation2d(2.00, 4.00);
-    private static final Translation2d kRedTower = new Translation2d(15.50, 4.00);
+    private static final Translation2d kBlueTower = new Translation2d(4.626, 4.029);
+    private static final Translation2d kRedTower = new Translation2d(11.911, 4.029);
 
     // TODO: Tune these placeholder coordinates.
     private static final Translation2d kBlueAllianceZoneLeft = new Translation2d(3.00, 5.50);
