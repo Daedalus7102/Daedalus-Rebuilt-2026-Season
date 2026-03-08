@@ -92,4 +92,10 @@ public class Constants {
         // Pigeon ID
         public static final int kPigeonID = 0;
     }
+    public static class IntakeConstants {
+        // Motor IDs
+        public static final int kRollerMotorID = 12;
+        public static final int kRotateMotorID = 10;
+        public static final int kRotateFollowerMotorID = 11;
+    }
 }

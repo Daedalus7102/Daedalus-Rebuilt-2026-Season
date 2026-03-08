@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
 import frc.robot.subsystems.drive.SwerveSubsystem;
+import frc.robot.subsystems.intake.IntakeSubsystem;
 
 public class RobotContainer {
 	private enum AimOverrideButton {
@@ -32,6 +33,7 @@ public class RobotContainer {
 
 	// Subsystems
 	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
+	private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
 
 	// Example field point to aim at
 	private static final Translation2d kLookAtPoint = new Translation2d(8.27, 4.10);
@@ -71,10 +73,16 @@ public class RobotContainer {
 
 		// Teleop convenience wrappers (driver intent first):
 		// Last pressed aim button wins.
-		m_driverController.L1().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
+		m_driverController.L1().onTrue(Commands.runOnce(() -> {
+			setAimOverride(AimOverrideButton.L1);
+			m_intakeSubsystem.intakeOut();
+		}, m_swerveSubsystem, m_intakeSubsystem));
 		m_driverController.L1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
 
-		m_driverController.L2().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
+		m_driverController.L2().onTrue(Commands.runOnce(() -> {
+			setAimOverride(AimOverrideButton.L2);
+			m_intakeSubsystem.intakeOut();
+		}, m_swerveSubsystem, m_intakeSubsystem));
 		m_driverController.L2().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
 
 		m_driverController.R1().onTrue(Commands.runOnce(() -> setAimOverride(AimOverrideButton.R1), m_swerveSubsystem));
@@ -88,6 +96,30 @@ public class RobotContainer {
 		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
 
 		// Operator Controller
+		// Intake test buttons (driver controller)
+		m_driverController.square()
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setRoller(0.8), m_intakeSubsystem))
+			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem));
+
+		m_driverController.cross()
+			.whileTrue(Commands.startEnd(
+				() -> {
+					m_intakeSubsystem.intakeOut();
+					m_intakeSubsystem.setRoller(1.0);
+				},
+				() -> m_intakeSubsystem.stopRoller(),
+				m_intakeSubsystem
+			));
+
+		m_driverController.triangle()
+			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-0.8), m_intakeSubsystem))
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotPosition(0), m_intakeSubsystem))
+			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
+
+		m_driverController.circle()
+			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(0.8), m_intakeSubsystem))
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotPosition(19), m_intakeSubsystem))
+			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
 		
 	}
 
