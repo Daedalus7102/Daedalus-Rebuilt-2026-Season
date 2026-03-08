@@ -4,13 +4,13 @@ import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.FeedbackSensor;
-import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
@@ -37,36 +37,9 @@ public class ShooterSubsystem extends SubsystemBase {
 		shooterMotorConfig2 = new SparkFlexConfig();
 		shooterMotorConfig3 = new SparkFlexConfig();
 
-		shooterMotorConfig1.closedLoop
-				.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-				.pid(ShooterConstants.shooterP, ShooterConstants.shooterI, ShooterConstants.shooterD)
-				.feedForward.kV(ShooterConstants.shooterKV);
-
-		shooterMotorConfig2.closedLoop
-				.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-				.pid(ShooterConstants.shooterP, ShooterConstants.shooterI, ShooterConstants.shooterD)
-				.feedForward.kV(ShooterConstants.shooterKV);
-
-		shooterMotorConfig3.closedLoop
-				.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-				.pid(ShooterConstants.shooterP, ShooterConstants.shooterI, ShooterConstants.shooterD)
-				.feedForward.kV(ShooterConstants.shooterKV);
-
-		shooterMotorConfig1.idleMode(SparkBaseConfig.IdleMode.kCoast)
-							.smartCurrentLimit(ShooterConstants.shootCurrentLimit)
-							.closedLoopRampRate(ShooterConstants.shootRampRate)
-							.voltageCompensation(ShooterConstants.voltageCompensation)
-							.inverted(true);
-		shooterMotorConfig2.idleMode(SparkBaseConfig.IdleMode.kCoast)
-							.smartCurrentLimit(ShooterConstants.shootCurrentLimit)
-							.closedLoopRampRate(ShooterConstants.shootRampRate)
-							.voltageCompensation(ShooterConstants.voltageCompensation)
-							.inverted(false);
-		shooterMotorConfig3.idleMode(SparkBaseConfig.IdleMode.kCoast)
-							.smartCurrentLimit(ShooterConstants.shootCurrentLimit)
-							.closedLoopRampRate(ShooterConstants.shootRampRate)
-							.voltageCompensation(ShooterConstants.voltageCompensation)
-							.inverted(false);
+		applyShooterMotorConfig(shooterMotorConfig1, true);
+		applyShooterMotorConfig(shooterMotorConfig2, false);
+		applyShooterMotorConfig(shooterMotorConfig3, false);
 
 		shooterMotor1.configure(shooterMotorConfig1, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 		shooterMotor2.configure(shooterMotorConfig2, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -80,12 +53,13 @@ public class ShooterSubsystem extends SubsystemBase {
 
 		hoodMotorConfig.closedLoop
 				.feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-				.pid(ShooterConstants.hoodP, ShooterConstants.hoodI, ShooterConstants.hoodD);
+				.pid(ShooterConstants.hoodP, ShooterConstants.hoodI, ShooterConstants.hoodD)
+				.outputRange(ShooterConstants.hoodClosedLoopMinOutput, ShooterConstants.hoodClosedLoopMaxOutput);
 
 		hoodMotorConfig.idleMode(SparkBaseConfig.IdleMode.kBrake)
 						.voltageCompensation(ShooterConstants.voltageCompensation)
-						.smartCurrentLimit(20)
-						.closedLoopRampRate(0.5);
+						.smartCurrentLimit(ShooterConstants.hoodCurrentLimit)
+						.closedLoopRampRate(ShooterConstants.hoodRampRate);
 
 		hoodMotor.configure(hoodMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
@@ -107,21 +81,23 @@ public class ShooterSubsystem extends SubsystemBase {
 	}
 
 	public void setShooterRPM(double rpm) {
-		double clampedRPM = Math.max(0.0, rpm);
+		double safeRPM = Double.isFinite(rpm) ? rpm : 0.0;
+		double clampedRPM = Math.max(0.0, safeRPM);
 		shooterMotor1.getClosedLoopController().setSetpoint(clampedRPM, ControlType.kVelocity);
 		shooterMotor2.getClosedLoopController().setSetpoint(clampedRPM, ControlType.kVelocity);
 		shooterMotor3.getClosedLoopController().setSetpoint(clampedRPM, ControlType.kVelocity);
 	}
 
 	public void setMeasuredRPM(double distance) {
-		double rpm = LookUpTable.getPoint(distance).rpm();
+		double safeDistance = Double.isFinite(distance) ? distance : 0.0;
+		double rpm = LookUpTable.getPoint(safeDistance).rpm();
 		setShooterRPM(rpm);
 	}
 
 	public double getShooterRPM() {
-		double rpm1 = shooterMotor1.getEncoder().getVelocity();
-		double rpm2 = shooterMotor2.getEncoder().getVelocity();
-		double rpm3 = shooterMotor3.getEncoder().getVelocity();
+		double rpm1 = Math.abs(shooterMotor1.getEncoder().getVelocity());
+		double rpm2 = Math.abs(shooterMotor2.getEncoder().getVelocity());
+		double rpm3 = Math.abs(shooterMotor3.getEncoder().getVelocity());
 		return (rpm1 + rpm2 + rpm3) / 3.0;
 	}
 
@@ -135,19 +111,25 @@ public class ShooterSubsystem extends SubsystemBase {
 	}
 
 	public void setHoodAngle(double angle) {
-		hoodMotor.getClosedLoopController().setSetpoint(
-				Math.max(Math.min(angle, ShooterConstants.maxHoodAngle), ShooterConstants.minHoodAngle),
-				SparkBase.ControlType.kPosition
-		);
+		double safeAngle = Double.isFinite(angle) ? angle : ShooterConstants.minHoodAngle;
+		double clampedAngle = MathUtil.clamp(safeAngle, ShooterConstants.minHoodAngle, ShooterConstants.maxHoodAngle);
+		hoodMotor.getClosedLoopController().setSetpoint(clampedAngle, ControlType.kPosition);
 	}
 
 	public void aim(double distance) {
-		double angle = LookUpTable.getPoint(distance).angle();
+		double safeDistance = Double.isFinite(distance) ? distance : 0.0;
+		double angle = LookUpTable.getPoint(safeDistance).angle();
 		setHoodAngle(angle);
 	}
 
 	public double getHoodAngle() {
-		return hoodMotor.getAbsoluteEncoder().getPosition();
+		return hoodEncoder.getPosition();
+	}
+
+	public boolean isAtHoodTarget(double toleranceDeg) {
+		double tolerance = Math.max(0.0, toleranceDeg);
+		double hoodTarget = hoodMotor.getClosedLoopController().getSetpoint();
+		return Math.abs(getHoodAngle() - hoodTarget) <= tolerance;
 	}
 
 	@Override
@@ -163,5 +145,19 @@ public class ShooterSubsystem extends SubsystemBase {
 		SmartDashboard.putNumber("Shooter3TargetRPM", shooterMotor3.getClosedLoopController().getSetpoint());
 
 		SmartDashboard.putBoolean("ShooterAtSpeed", isAtTargetRPM(ShooterConstants.shooterReadyToleranceRPM));
+		SmartDashboard.putBoolean("HoodAtTarget", isAtHoodTarget(ShooterConstants.hoodReadyToleranceDeg));
+	}
+
+	private void applyShooterMotorConfig(SparkFlexConfig config, boolean inverted) {
+		config.closedLoop
+				.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+				.pid(ShooterConstants.shooterP, ShooterConstants.shooterI, ShooterConstants.shooterD)
+				.feedForward.kV(ShooterConstants.shooterKV);
+
+		config.idleMode(SparkBaseConfig.IdleMode.kCoast)
+				.smartCurrentLimit(ShooterConstants.shootCurrentLimit)
+				.closedLoopRampRate(ShooterConstants.shootRampRate)
+				.voltageCompensation(ShooterConstants.voltageCompensation)
+				.inverted(inverted);
 	}
 }

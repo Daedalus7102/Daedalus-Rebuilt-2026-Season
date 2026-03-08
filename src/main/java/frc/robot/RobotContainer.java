@@ -12,9 +12,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
-import frc.robot.subsystems.commands.FeedShooter;
-import frc.robot.subsystems.commands.SpoolShooter;
-import frc.robot.subsystems.commands.UnclogShooter;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.shooter.FeederSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
@@ -36,6 +33,7 @@ public class RobotContainer {
 	public RobotContainer() {
 		NamedCommands.registerCommand("nothing", Commands.sequence(
 		));
+		SmartDashboard.putNumber("HoodSetAngleDeg", Constants.ShooterConstants.minHoodAngle);
 
 		configureBindings();
 
@@ -55,12 +53,16 @@ public class RobotContainer {
 				() -> dPadYFromPov(m_driverController.getHID().getPOV())
 		);
 
-		m_driverController.R2().whileTrue(new SpoolShooter(m_ShooterSubsystem, () -> 5));
-		m_driverController.cross().whileTrue(new FeedShooter(m_FeederSubsystem, m_ShooterSubsystem, true));
-		m_driverController.triangle().whileTrue(new FeedShooter(m_FeederSubsystem, m_ShooterSubsystem, false));
+		// Move hood to the requested angle from dashboard when L2 is pressed.
+		m_driverController.L2().onTrue(Commands.runOnce(
+				() -> moveHoodToAngle(20.0),
+				m_ShooterSubsystem
+		));
 
-		// Operator Controller
-		m_operatorController.triangle().whileTrue(new UnclogShooter(m_ShooterSubsystem, m_FeederSubsystem));
+	}
+
+	public void moveHoodToAngle(double angleDeg) {
+		m_ShooterSubsystem.setHoodAngle(angleDeg);
 	}
 
 	private double dPadXFromPov(int pov) {
