@@ -118,8 +118,13 @@ public class ShooterSubsystem extends SubsystemBase {
 
 	public void aim(double distance) {
 		double safeDistance = Double.isFinite(distance) ? distance : 0.0;
-		double angle = LookUpTable.getPoint(safeDistance).angle();
-		setHoodAngle(angle);
+		LookUpTable.DataPoint point = LookUpTable.getPoint(safeDistance);
+		setHoodAngle(point.angle());
+		setShooterRPM(point.rpm());
+	}
+
+	public boolean isReadyToShoot() {
+		return getShooterRPM() >= ShooterConstants.shooterMinRPM;
 	}
 
 	public double getHoodAngle() {
@@ -146,6 +151,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
 		SmartDashboard.putBoolean("ShooterAtSpeed", isAtTargetRPM(ShooterConstants.shooterReadyToleranceRPM));
 		SmartDashboard.putBoolean("HoodAtTarget", isAtHoodTarget(ShooterConstants.hoodReadyToleranceDeg));
+		SmartDashboard.putBoolean("ReadyToShoot", isReadyToShoot());
 	}
 
 	private void applyShooterMotorConfig(SparkFlexConfig config, boolean inverted) {

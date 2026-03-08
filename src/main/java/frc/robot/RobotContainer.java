@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.shooter.FeederSubsystem;
+import frc.robot.subsystems.shooter.LookUpTable;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 
 public class RobotContainer {
@@ -34,6 +35,10 @@ public class RobotContainer {
 		NamedCommands.registerCommand("nothing", Commands.sequence(
 		));
 		SmartDashboard.putNumber("HoodSetAngleDeg", Constants.ShooterConstants.minHoodAngle);
+		SmartDashboard.putNumber("ShooterDistanceM", 3.0);
+		SmartDashboard.putNumber("TestAimDistanceM", 0.0);
+		SmartDashboard.putNumber("TestAimTargetAngle", 0.0);
+		SmartDashboard.putNumber("TestAimTargetRPM", 0.0);
 
 		configureBindings();
 
@@ -42,6 +47,23 @@ public class RobotContainer {
 	}
 
 	private void configureBindings() {
+		Command aimToggleCommand = Commands.run(
+				() -> m_ShooterSubsystem.aim(getShooterDistanceMeters()),
+				m_ShooterSubsystem
+		).finallyDo((_interrupted) -> m_ShooterSubsystem.disable());
+
+		Command shootToggleCommand = Commands.runEnd(
+				() -> {
+					if (m_ShooterSubsystem.isReadyToShoot()) {
+						m_FeederSubsystem.enable();
+					} else {
+						m_FeederSubsystem.disable();
+					}
+				},
+				m_FeederSubsystem::disable,
+				m_FeederSubsystem
+		);
+
 		// Driver Controller
 		m_swerveSubsystem.setJoystickSuppliers(
 				() -> -m_driverController.getHID().getLeftY(),
@@ -53,16 +75,25 @@ public class RobotContainer {
 				() -> dPadYFromPov(m_driverController.getHID().getPOV())
 		);
 
-		// Move hood to the requested angle from dashboard when L2 is pressed.
-		m_driverController.L2().onTrue(Commands.runOnce(
-				() -> moveHoodToAngle(20.0),
+		// Operator L2: press once to start aim, press again to stop aim.
+		m_operatorController.L2().toggleOnTrue(aimToggleCommand);
+
+		// Operator R2: press once to start shooting, press again to stop shooting.
+		m_operatorController.R2().toggleOnTrue(shootToggleCommand);
+
+		// Test: press square once to set hood angle and shooter RPM from LUT point.
+		m_operatorController.square().onTrue(Commands.runOnce(
+				() -> {
+					m_ShooterSubsystem.setHoodAngle(SmartDashboard.getNumber("TestAimTargetAngle", 10));
+					m_ShooterSubsystem.setShooterRPM(SmartDashboard.getNumber("TestAimTargetRPM", 5000));
+				},
 				m_ShooterSubsystem
 		));
 
 	}
 
-	public void moveHoodToAngle(double angleDeg) {
-		m_ShooterSubsystem.setHoodAngle(angleDeg);
+	private double getShooterDistanceMeters() {
+		return SmartDashboard.getNumber("ShooterDistanceM", 3.0);
 	}
 
 	private double dPadXFromPov(int pov) {
