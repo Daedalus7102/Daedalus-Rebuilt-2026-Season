@@ -1,12 +1,16 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import org.photonvision.EstimatedRobotPose;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
 
@@ -30,11 +34,12 @@ public class SwerveSubsystem extends SubsystemBase {
 		AUTO_TEAM
 	}
 
-	private DoubleSupplier joystickX, joystickY, joystickRotation;
+	private final DoubleSupplier joystickX, joystickY, joystickRotation;
 	private DriveMode driveMode = DriveMode.FIELD_RELATIVE;
 	private Translation2d hubPos = new Translation2d(0, 0);
 	private double inputMultiplier = 1;
 
+	private final Vision vision;
 	private final SwerveDrive swerveDrive;
 
 	public SwerveSubsystem(DoubleSupplier joystickX, DoubleSupplier joystickY, DoubleSupplier joystickRotation) {
@@ -47,6 +52,7 @@ public class SwerveSubsystem extends SubsystemBase {
 		this.joystickX = joystickX;
 		this.joystickY = joystickY;
 		this.joystickRotation = joystickRotation;
+		this.vision = new Vision(this);
 	}
 
 	@Override
@@ -61,6 +67,9 @@ public class SwerveSubsystem extends SubsystemBase {
 		SmartDashboard.putNumber("Translation Y", translation.getY());
 		SmartDashboard.putNumber("Rotation", rotation);
 		SmartDashboard.putString("Mode", driveMode.name());
+
+		vision.updatePose();
+
 		switch (driveMode) {
 			case FIELD_RELATIVE:
 				driveFieldRelative(translation, rotation);
@@ -100,6 +109,10 @@ public class SwerveSubsystem extends SubsystemBase {
 	 */
 	public void resetMode() {
 		driveMode = DriveMode.FIELD_RELATIVE;
+	}
+
+	public void addVisionMeasurement(EstimatedRobotPose pose, Matrix<N3, N1> deviation) {
+		swerveDrive.addVisionMeasurement(pose.estimatedPose.toPose2d(), pose.timestampSeconds, deviation);
 	}
 
 	private void driveFieldRelative(Translation2d translation, double rotation) {
