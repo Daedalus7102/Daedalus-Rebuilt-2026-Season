@@ -14,7 +14,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
+import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
@@ -37,60 +39,139 @@ public class RobotContainer {
 	// Subsystems
 	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
 	private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
-	private final ShooterSubsystem m_ShooterSubsystem = new ShooterSubsystem();
-	private final FeederSubsystem m_FeederSubsystem = new FeederSubsystem();
+	private final ShooterSubsystem m_shooterSubsystem = new ShooterSubsystem();
+	private final FeederSubsystem  m_feederSubsystem  = new FeederSubsystem();
 
 	// Example field point to aim at
 	private static final Translation2d kLookAtPoint = new Translation2d(8.27, 4.10);
 	private static final double kReducedDriveScale = 0.30;
 	private AimOverrideButton m_activeAimOverrideButton = AimOverrideButton.NONE;
 
+	
+
 	// Autonomous
 	private SendableChooser<Command> m_autoChooser;
 
 	public RobotContainer() {
-		NamedCommands.registerCommand("nothing", Commands.sequence(
-		));
-		// Autonomous event markers: explicit field-based aiming helpers.
-		NamedCommands.registerCommand("AimSpeakerOn", m_swerveSubsystem.enableAutoAimAtPoint(kLookAtPoint));
-		NamedCommands.registerCommand("AimSpeakerOff", m_swerveSubsystem.disableAutoAim());
-		NamedCommands.registerCommand("AimForwardOn", m_swerveSubsystem.enableAutoAimAtAngle(Rotation2d.fromDegrees(0.0)));
-		NamedCommands.registerCommand("AimForwardOff", m_swerveSubsystem.disableAutoAim());
-
-		m_swerveSubsystem.setReducedVelocityScale(kReducedDriveScale);
-		
+		registerNamedCommands();
 		configureBindings();
+		buildAutoChooser();
+	}
 
-		m_autoChooser = AutoBuilder.buildAutoChooser();
-		SmartDashboard.putData("AutoR", m_autoChooser);
+	//NAMED COMMANDS
+	private void registerNamedCommands() {
+
+		NamedCommands.registerCommand("nothing", Commands.none());
+
+		// Swerve heading helpers
+		NamedCommands.registerCommand("AimSpeakerOn",
+			m_swerveSubsystem.enableAutoAimAtPoint(kLookAtPoint));
+		NamedCommands.registerCommand("AimSpeakerOff",
+			m_swerveSubsystem.disableAutoAim());
+		NamedCommands.registerCommand("AimForwardOn",
+			m_swerveSubsystem.enableAutoAimAtAngle(Rotation2d.fromDegrees(0.0)));
+		NamedCommands.registerCommand("AimForwardOff",
+			m_swerveSubsystem.disableAutoAim());
+
+		// Intake
+		NamedCommands.registerCommand("DeployIntake",
+			Commands.runOnce(() -> m_intakeSubsystem.intakeOut(), m_intakeSubsystem)
+		);
+		NamedCommands.registerCommand("StartRollers",
+			Commands.runOnce(() -> m_intakeSubsystem.setRoller(0.8), m_intakeSubsystem)
+		);
+		NamedCommands.registerCommand("StopRollers",
+			Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem)
+		);
+		NamedCommands.registerCommand("RetractIntake",
+			Commands.runOnce(() -> {
+				m_intakeSubsystem.intakeIn();
+				m_intakeSubsystem.stopRoller();
+			}, m_intakeSubsystem)
+		);
+		NamedCommands.registerCommand("StopIntake",
+			Commands.runOnce(() -> m_intakeSubsystem.stop(), m_intakeSubsystem)
+		);
+
+		NamedCommands.registerCommand("SpinUpShooter",
+			Commands.runOnce(
+				() -> m_shooterSubsystem.aim(ShooterConstants.autoShootDistanceMeters),
+m_shooterSubsystem
+			)
+		);
+
+		NamedCommands.registerCommand("AimAndShoot",
+			Commands.sequence(
+				Commands.runOnce(() -> {
+					m_intakeSubsystem.intakeIn();
+					m_intakeSubsystem.stopRoller();
+				}, m_intakeSubsystem),
+
+				new WaitCommand(ShooterConstants.autoSpinUpWaitSeconds),
+
+				Commands.runOnce(() -> m_feederSubsystem.enable(), m_feederSubsystem),
+				new WaitCommand(ShooterConstants.autoFeedTimeSeconds),
+
+				Commands.runOnce(() -> {
+					m_feederSubsystem.disable();
+					m_shooterSubsystem.disable();
+				}, m_feederSubsystem, m_shooterSubsystem)
+			)
+		);
+	}
+
+	//AUTO CHOOSER
+	private void buildAutoChooser() {
+		m_autoChooser = new SendableChooser<>();
+
+		m_autoChooser.setDefaultOption("Do Nothing", Commands.none());
+
+		m_autoChooser.addOption("Blue Left Auto",
+			AutoBuilder.buildAuto("BlueLeft_Collect")
+				.andThen(AutoBuilder.buildAuto("BlueLeft_Return"))
+		);
+		m_autoChooser.addOption("Blue Right Auto",
+			AutoBuilder.buildAuto("BlueRight_Collect")
+				.andThen(AutoBuilder.buildAuto("BlueRight_Return"))
+		);
+		m_autoChooser.addOption("Blue Middle → Left Auto",
+			AutoBuilder.buildAuto("BlueMiddle_Go_L")
+				.andThen(AutoBuilder.buildAuto("BlueLeft_Return"))
+		);
+		m_autoChooser.addOption("Blue Middle → Right Auto",
+			AutoBuilder.buildAuto("BlueMiddle_Go_R")
+				.andThen(AutoBuilder.buildAuto("BlueRight_Return"))
+		);
+
+		SmartDashboard.putData("Auto Chooser", m_autoChooser);
 	}
 
 	private void configureBindings() {
 
 		Command aimToggleCommand = Commands.run(
-				() -> m_ShooterSubsystem.aim(10),
-				m_ShooterSubsystem
-		).finallyDo((_interrupted) -> m_ShooterSubsystem.disable());
+				() -> m_shooterSubsystem.aim(10),
+				m_shooterSubsystem
+		).finallyDo((_interrupted) -> m_shooterSubsystem.disable());
 
 		Command shootToggleCommand = Commands.runEnd(
 				() -> {
-					if (m_ShooterSubsystem.isReadyToShoot()) {
-						m_FeederSubsystem.enable();
+					if (m_shooterSubsystem.isReadyToShoot()) {
+						m_feederSubsystem.enable();
 					} else {
-						m_FeederSubsystem.disable();
+						m_feederSubsystem.disable();
 					}
 				},
-				m_FeederSubsystem::disable,
-				m_FeederSubsystem
+				m_feederSubsystem::disable,
+				m_feederSubsystem
 		);
 
 		Command testAimToggleCommand = Commands.startEnd(
 				() -> {
-					m_ShooterSubsystem.setHoodAngle(SmartDashboard.getNumber("TestAimTargetAngle", 15));
-					m_ShooterSubsystem.setShooterRPM(SmartDashboard.getNumber("TestAimTargetRPM", 5000));
+					m_shooterSubsystem.setHoodAngle(SmartDashboard.getNumber("TestAimTargetAngle", 15));
+					m_shooterSubsystem.setShooterRPM(SmartDashboard.getNumber("TestAimTargetRPM", 5000));
 				},
-				m_ShooterSubsystem::disable,
-				m_ShooterSubsystem
+				m_shooterSubsystem::disable,
+				m_shooterSubsystem
 		);
 		// Driver Controller
 
