@@ -1,0 +1,68 @@
+package frc.robot.subsystems.shooter;
+
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkLowLevel;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkBaseConfig;
+import com.revrobotics.spark.config.SparkFlexConfig;
+import com.revrobotics.spark.config.SparkMaxConfig;
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.ShooterConstants;
+
+public class FeederSubsystem extends SubsystemBase {
+	private final SparkFlex indexerMotor;
+	private final SparkMax feederMotor;
+
+	private final SparkFlexConfig indexerMotorConfig;
+	private final SparkMaxConfig feederMotorConfig;
+
+	public FeederSubsystem() {
+		indexerMotor = new SparkFlex(Constants.ShooterConstants.indexerMotorID, SparkLowLevel.MotorType.kBrushless);
+		indexerMotorConfig = new SparkFlexConfig();
+		indexerMotorConfig
+		.idleMode(SparkBaseConfig.IdleMode.kCoast)
+		.smartCurrentLimit(35)
+		.voltageCompensation(12)
+		.inverted(true);
+		indexerMotor.configure(indexerMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+		feederMotor = new SparkMax(Constants.ShooterConstants.feederMotorID, SparkLowLevel.MotorType.kBrushless);
+		feederMotorConfig = new SparkMaxConfig();
+		feederMotorConfig
+		.idleMode(SparkBaseConfig.IdleMode.kCoast)
+		.smartCurrentLimit(35)
+		.voltageCompensation(12)
+		.inverted(false);
+		feederMotor.configure(feederMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+	}
+
+	public void setSpeed(double speed) {
+		indexerMotor.set(speed);
+		feederMotor.set(speed);
+	}
+
+	public void enable() {
+		indexerMotor.set(ShooterConstants.indexerSpeed);
+		feederMotor.set(ShooterConstants.feederSpeed);
+	}
+
+	public void disable() {
+		indexerMotor.stopMotor();
+		feederMotor.stopMotor();
+	}
+
+	public void unclog() {
+		indexerMotor.set(-0.6);
+	}
+
+	@Override
+	public void periodic() {
+		SmartDashboard.putNumber("FeederSpeed", feederMotor.get());
+		SmartDashboard.putNumber("IndexerSpeed", indexerMotor.get());
+	}
+}

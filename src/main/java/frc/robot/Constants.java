@@ -103,6 +103,53 @@ public class Constants {
         public static final int kRotateFollowerMotorID = 11;
     }
 
+    public static class ShooterConstants {
+		public static final int shootMotor1ID = 23;
+		public static final int shootMotor2ID = 24;
+		public static final int shootMotor3ID = 25;
+		public static final int hoodMotorID = 22;
+		public static final int indexerMotorID = 21;
+		public static final int feederMotorID = 20;
+
+		public static final double maxHoodAngle = 30;
+		public static final double minHoodAngle = 10;
+
+        // Shooter motor configuration
+        public static final int shootCurrentLimit = 35;
+        public static final double shootRampRate = 0.2;
+        public static final double voltageCompensation = 12;
+
+		// Shooter closed-loop (Spark velocity control in RPM)
+		// 1:1
+		public static final double shooterP = 0.0025;
+		public static final double shooterI = 0.0;
+		public static final double shooterD = 0.002;
+		public static final double shooterKV = 0.0004;
+
+        // Shooter hood closed-loop (Position control through absolute encoder)
+        public static final double hoodP = 0.032;
+        public static final double hoodI = 0;
+        public static final double hoodD = 0;
+        public static final double hoodKV = 0;
+        public static final int hoodCurrentLimit = 30;
+        public static final double hoodRampRate = 0.5;
+        public static final double hoodClosedLoopMinOutput = -0.4;
+        public static final double hoodClosedLoopMaxOutput = 0.4;
+        public static final double hoodReadyToleranceDeg = 1.0;
+
+		public static final double shooterTargetRPM = 5000;
+		public static final double shooterReadyToleranceRPM = 500;
+		public static final double shooterMinRPM = 1000;
+        public static final double unclogRPM = -4000;
+
+        // Feeder & Indexer
+        public static final double feederSpeed = 1.0;
+        public static final double indexerSpeed = 1.0;
+
+		public static final double feedingShooterRPM = shooterTargetRPM;
+        public static final double feedingHoodAngle = 0;
+	}
+
     public static class VisionConstants {
         // Baseline confidence when only one tag contributes to the estimate.
         public static final Matrix<N3, N1> singleTagDeviation = VecBuilder.fill(4, 4, 8);
