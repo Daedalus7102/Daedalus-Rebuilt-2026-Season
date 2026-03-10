@@ -16,6 +16,10 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
+import frc.robot.commands.drive.ResetGyroComand;
+import frc.robot.commands.intake.IntakeAbsorbCommand;
+import frc.robot.commands.shooting.ShootCommand;
+import frc.robot.commands.shooting.TestAimCommand;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.shooter.FeederSubsystem;
@@ -69,6 +73,7 @@ public class RobotContainer {
 
 	private void configureBindings() {
 
+		/* 
 		Command aimToggleCommand = Commands.run(
 				() -> m_ShooterSubsystem.aim(10),
 				m_ShooterSubsystem
@@ -97,10 +102,13 @@ public class RobotContainer {
 				},
 				m_ShooterSubsystem
 		);
+		*/
+
 		// Driver Controller
 
 		// Zero gyro heading on button press.
-		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
+		m_driverController.options().onTrue(
+			new ResetGyroComand(m_swerveSubsystem));
 
 		m_swerveSubsystem.setJoystickSuppliers(
 			() -> -m_driverController.getHID().getLeftY(),
@@ -138,7 +146,7 @@ public class RobotContainer {
 				setAimOverride(AimOverrideButton.R1);
 			}
 		}, m_swerveSubsystem));
-		m_driverController.R1().toggleOnTrue(testAimToggleCommand);
+		m_driverController.R1().toggleOnTrue(new TestAimCommand(m_ShooterSubsystem));
 
 
 		// Operator Controller
@@ -148,14 +156,7 @@ public class RobotContainer {
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem));
 
 		m_operatorController.L2()
-			.whileTrue(Commands.startEnd(
-				() -> {
-					m_intakeSubsystem.intakeOut();
-					m_intakeSubsystem.setRoller(1.0);
-				},
-				() -> m_intakeSubsystem.stopRoller(),
-				m_intakeSubsystem
-			));
+			.whileTrue(new IntakeAbsorbCommand(m_intakeSubsystem));
 
 		m_operatorController.triangle()
 			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-0.8), m_intakeSubsystem))
@@ -171,7 +172,7 @@ public class RobotContainer {
 		// m_operatorController.L1().toggleOnTrue(aimToggleCommand);
 
 		// Operator R1: shoot only while held.
-		m_operatorController.R1().whileTrue(shootToggleCommand);
+		m_operatorController.R1().whileTrue(new ShootCommand(m_FeederSubsystem, m_ShooterSubsystem, false));
 
 		
 	}
