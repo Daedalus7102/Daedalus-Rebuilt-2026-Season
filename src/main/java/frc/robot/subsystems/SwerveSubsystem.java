@@ -1,5 +1,9 @@
 package frc.robot.subsystems;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -8,13 +12,19 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.subsystems.camera.Vision;
 import org.photonvision.EstimatedRobotPose;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
 import java.io.File;
+import java.util.List;
 import java.util.function.DoubleSupplier;
 
 public class SwerveSubsystem extends SubsystemBase {
@@ -38,10 +48,11 @@ public class SwerveSubsystem extends SubsystemBase {
 	private Translation2d hubPos = new Translation2d(0, 0);
 	private final double AUTO_HUB_INPUT_SCALE = 0.2;
 	private final double DPAD_SCALE = 0.05;
-	private double inputMultiplier = 1;
+	public double inputMultiplier = 1;
+	private boolean scaleInput = false;
 
 	private final Vision vision;
-	private final SwerveDrive swerveDrive;
+	public final SwerveDrive swerveDrive;
 
 	public SwerveSubsystem(DoubleSupplier joystickX, DoubleSupplier joystickY, DoubleSupplier joystickRotation, DoubleSupplier dPadX, DoubleSupplier dPadY) {
 		this.dPadX = dPadX;
@@ -56,6 +67,28 @@ public class SwerveSubsystem extends SubsystemBase {
 		this.joystickY = joystickY;
 		this.joystickRotation = joystickRotation;
 		this.vision = new Vision(this);
+
+		try {
+			RobotConfig config = RobotConfig.fromGUISettings();
+			AutoBuilder.configure(
+					swerveDrive::getPose,
+					swerveDrive::resetOdometry,
+					swerveDrive::getRobotVelocity,
+					chassisSpeeds -> swerveDrive.drive(chassisSpeeds),
+					new PPHolonomicDriveController(
+							new PIDConstants(5.0, 0.0, 0.0),
+							new PIDConstants(5.0, 0.0, 0.0)
+					),
+					config,
+					() -> DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue)
+							== DriverStation.Alliance.Red,
+					this
+			);
+		} catch (Exception e) {
+			DriverStation.reportError(
+					"Failed to configure PathPlanner AutoBuilder: " + e.getMessage(),
+					e.getStackTrace());
+		}
 	}
 
 	@Override
@@ -83,6 +116,14 @@ public class SwerveSubsystem extends SubsystemBase {
 		}
 	}
 
+	public void setScaleInput(boolean scaleInput) {
+		this.scaleInput = scaleInput;
+	}
+
+	public double getScaleInputValue() {
+		return scaleInput ? inputMultiplier : 1;
+	}
+
 	public boolean usingDPads() {
 		return dPadX.getAsDouble() != 0 || dPadY.getAsDouble() != 0;
 	}
@@ -97,13 +138,30 @@ public class SwerveSubsystem extends SubsystemBase {
 		SmartDashboard.putString("Mode", driveMode.name());
 	 */
 
+	public void setFieldLine(String objectName, Translation2d startPoint, Translation2d endPoint) {
+		Translation2d delta = endPoint.minus(startPoint);
+		if (delta.getNorm() < 1e-6) {
+			swerveDrive.field.getObject(objectName).setPoses(new Pose2d(startPoint, Rotation2d.kZero));
+			return;
+		}
+
+		Rotation2d heading = delta.getAngle();
+		Trajectory trajectory = TrajectoryGenerator.generateTrajectory(
+				new Pose2d(startPoint, heading),
+				List.of(),
+				new Pose2d(endPoint, heading),
+				new TrajectoryConfig(2.0, 2.0));
+
+		swerveDrive.field.getObject(objectName).setTrajectory(trajectory);
+	}
+
 	private Translation2d getControllerTranslation() {
 		Translation2d translation = new Translation2d(
 				MathUtil.applyDeadband(-joystickY.getAsDouble(), 0.1),
 				MathUtil.applyDeadband(-joystickX.getAsDouble(), 0.1)
 		);
 
-		return translation.times(inputMultiplier * Constants.SwerveConstants.maxSpeed);
+		return translation.times(getScaleInputValue() * Constants.SwerveConstants.maxSpeed);
 	}
 
 	private Translation2d getDPadTranslation() {
@@ -112,12 +170,12 @@ public class SwerveSubsystem extends SubsystemBase {
 				dPadY.getAsDouble()
 		);
 
-		return translation.times(inputMultiplier * Constants.SwerveConstants.maxSpeed * DPAD_SCALE);
+		return translation.times(getScaleInputValue() * Constants.SwerveConstants.maxSpeed * DPAD_SCALE);
 	}
 
 	private double getControllerRotation() {
 		return MathUtil.applyDeadband(-joystickRotation.getAsDouble(), 0.1) *
-				Constants.SwerveConstants.maxTurnRate * inputMultiplier;
+				Constants.SwerveConstants.maxTurnRate * getScaleInputValue();
 	}
 
 	public void resetOdometryRotation() {

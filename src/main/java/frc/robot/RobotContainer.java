@@ -4,13 +4,16 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.SwerveSubsystem.DriveMode;
-import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
-import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.shooter.FeederSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
@@ -23,14 +26,13 @@ public class RobotContainer {
 	public static final CommandPS5Controller m_operatorController = new CommandPS5Controller(1);
 
 	// Subsystems
-	private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem(
+	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem(
 			() -> m_driverController.getHID().getLeftX(),
 			() -> m_driverController.getHID().getLeftY(),
 			() -> m_driverController.getHID().getRightX(),
 			() -> dPadXFromPov(m_driverController.getHID().getPOV()),
 			() -> dPadYFromPov(m_driverController.getHID().getPOV())
 	);
-	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
 	private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
 	private final ShooterSubsystem m_ShooterSubsystem = new ShooterSubsystem();
 	private final FeederSubsystem m_FeederSubsystem = new FeederSubsystem();
@@ -46,15 +48,13 @@ public class RobotContainer {
 		NamedCommands.registerCommand("nothing", Commands.sequence(
 		));
 		// Autonomous event markers: explicit field-based aiming helpers.
-		NamedCommands.registerCommand("AimSpeakerOn", m_swerveSubsystem.enableAutoAimAtPoint(kLookAtPoint));
-		NamedCommands.registerCommand("AimSpeakerOff", m_swerveSubsystem.disableAutoAim());
-		NamedCommands.registerCommand("AimForwardOn", m_swerveSubsystem.enableAutoAimAtAngle(Rotation2d.fromDegrees(0.0)));
-		NamedCommands.registerCommand("AimForwardOff", m_swerveSubsystem.disableAutoAim());
+		NamedCommands.registerCommand("AimHubOn", Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_HUB), m_swerveSubsystem));
+		NamedCommands.registerCommand("AimHubOff", Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
+		NamedCommands.registerCommand("AimTeamOn", Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_TEAM), m_swerveSubsystem));
+		NamedCommands.registerCommand("AimTeamOff", Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
 
-		m_swerveSubsystem.setReducedVelocityScale(kReducedDriveScale);
-		
 		configureBindings();
-		swerveSubsystem.setHubPos(kLookAtPoint);
+		m_swerveSubsystem.setHubPos(kLookAtPoint);
 
 		m_autoChooser = AutoBuilder.buildAutoChooser();
 		SmartDashboard.putData("AutoR", m_autoChooser);
@@ -93,13 +93,15 @@ public class RobotContainer {
 				m_ShooterSubsystem
 		);
 		// Driver Controller
-		m_driverController.L1().onTrue(Commands.runOnce(() -> swerveSubsystem.setMode(DriveMode.AUTO_TEAM), swerveSubsystem));
-		m_driverController.L1().onFalse(Commands.runOnce(swerveSubsystem::resetMode, swerveSubsystem));
+		m_driverController.square().onTrue(Commands.runOnce(this::updateTowerDistanceDashboard, m_swerveSubsystem));
 
-		m_driverController.R1().onTrue(Commands.runOnce(() -> swerveSubsystem.setMode(DriveMode.AUTO_HUB), swerveSubsystem));
-		m_driverController.R1().onFalse(Commands.runOnce(swerveSubsystem::resetMode, swerveSubsystem));
+		m_driverController.L1().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_TEAM), m_swerveSubsystem));
+		m_driverController.L1().onFalse(Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
 
-		m_driverController.options().onTrue(Commands.runOnce(swerveSubsystem::resetOdometryRotation, swerveSubsystem));
+		m_driverController.R1().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_HUB), m_swerveSubsystem));
+		m_driverController.R1().onFalse(Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
+
+		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::resetOdometryRotation, m_swerveSubsystem));
 
 		// Operator Controller
 		// Intake test buttons (driver controller)
@@ -137,9 +139,9 @@ public class RobotContainer {
 	}
 
 	private void updateTowerDistanceDashboard() {
-		Translation2d robotTranslation = m_swerveSubsystem.getPose().getTranslation();
+		Translation2d robotTranslation = m_swerveSubsystem.swerveDrive.getPose().getTranslation();
 		Translation2d towerTranslation = AllianceTargetPoses.getTowerTranslationForCurrentAlliance();
-		double distanceMeters = AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.getPose());
+		double distanceMeters = AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.swerveDrive.getPose());
 
 		SmartDashboard.putNumber("AllianceTowerDistanceM", distanceMeters);
 		m_swerveSubsystem.setFieldLine("AllianceTowerLine", robotTranslation, towerTranslation);
@@ -166,15 +168,15 @@ public class RobotContainer {
 	}
 
 	public void onAutonomousInit() {
-		m_swerveSubsystem.disableAutoAimNow();
-		m_swerveSubsystem.setUseReducedVelocity(false);
-		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.AUTO));
+		m_swerveSubsystem.resetMode();
+		m_swerveSubsystem.setScaleInput(false);
+		//CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.AUTO));
 	}
 
 	public void onTeleopInit() {
-		m_swerveSubsystem.disableAutoAimNow();
-		m_swerveSubsystem.setUseReducedVelocity(false);
-		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.IDLE));
+		m_swerveSubsystem.resetMode();
+		m_swerveSubsystem.setScaleInput(false);
+		//CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.IDLE));
 	}
 
 	public Runnable dashboardLoop() {
