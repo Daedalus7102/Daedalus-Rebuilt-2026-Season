@@ -63,6 +63,8 @@ public class RobotContainer {
 
 		m_autoChooser = AutoBuilder.buildAutoChooser();
 		SmartDashboard.putData("AutoR", m_autoChooser);
+		SmartDashboard.putNumber("TestAimTargetAngle", 10);
+		SmartDashboard.putNumber("TestAimTargetRPM", 4000);
 	}
 
 	private void configureBindings() {
@@ -86,10 +88,13 @@ public class RobotContainer {
 
 		Command testAimToggleCommand = Commands.startEnd(
 				() -> {
-					m_ShooterSubsystem.setHoodAngle(SmartDashboard.getNumber("TestAimTargetAngle", 15));
-					m_ShooterSubsystem.setShooterRPM(SmartDashboard.getNumber("TestAimTargetRPM", 5000));
+					m_ShooterSubsystem.setHoodAngle(SmartDashboard.getNumber("TestAimTargetAngle", 10));
+					m_ShooterSubsystem.setShooterRPM(SmartDashboard.getNumber("TestAimTargetRPM", 4000));
 				},
-				m_ShooterSubsystem::disable,
+				() -> {
+					m_ShooterSubsystem.disable();
+					m_FeederSubsystem.disable();
+				},
 				m_ShooterSubsystem
 		);
 		// Driver Controller
@@ -133,10 +138,7 @@ public class RobotContainer {
 				setAimOverride(AimOverrideButton.R1);
 			}
 		}, m_swerveSubsystem));
-
-		// // Hold R2 for precision/slow translation driving.
-		// m_driverController.R2().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setUseReducedVelocity(true), m_swerveSubsystem));
-		// m_driverController.R2().onFalse(Commands.runOnce(() -> m_swerveSubsystem.setUseReducedVelocity(false), m_swerveSubsystem));
+		m_driverController.R1().toggleOnTrue(testAimToggleCommand);
 
 
 		// Operator Controller
@@ -166,13 +168,11 @@ public class RobotContainer {
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
 
 		// Operator L2: press once to start aim, press again to stop aim.
-		m_operatorController.L1().toggleOnTrue(aimToggleCommand);
+		// m_operatorController.L1().toggleOnTrue(aimToggleCommand);
 
-		// Operator R2: press once to start shooting, press again to stop shooting.
-		m_operatorController.R1().toggleOnTrue(shootToggleCommand);
+		// Operator R1: shoot only while held.
+		m_operatorController.R1().whileTrue(shootToggleCommand);
 
-		// Test: tap cross once to enable target angle/RPM, tap again to disable shooter.
-		m_operatorController.cross().toggleOnTrue(testAimToggleCommand);
 		
 	}
 

@@ -26,7 +26,7 @@ public class Constants {
         public static final double kDriveMaxSpeed = 3.6; // Maximum drive speed in meters per second
         public static final double kDriveMaxAcc = 0.6; // Maximum drive acceleration in meters per second squared
         public static final double kDriveGearRatio = 1d/6.75d; // 5.36;
-        public static final double kTurnMaxSpeed = Math.PI*2; // Maximum turn speed in radians per second
+        public static final double kTurnMaxSpeed = Math.PI*1.5; // Maximum turn speed in radians per second
         public static final double kTurnMaxAcc = 0.15; // Maximum turn acceleration in radians per second squared
         public static final double kTurnGearRatio = 150d/7d;
         // Drive encoder
@@ -116,7 +116,7 @@ public class Constants {
 
         // Shooter motor configuration
         public static final int shootCurrentLimit = 35;
-        public static final double shootRampRate = 0.2;
+        public static final double shootRampRate = 0.05;
         public static final double voltageCompensation = 12;
 
 		// Shooter closed-loop (Spark velocity control in RPM)
@@ -138,13 +138,13 @@ public class Constants {
         public static final double hoodReadyToleranceDeg = 1.0;
 
 		public static final double shooterTargetRPM = 5000;
-		public static final double shooterReadyToleranceRPM = 500;
-		public static final double shooterMinRPM = 1000;
+		public static final double shooterReadyToleranceRPM = 200;
+		public static final double shooterMinRPM = 3000;
         public static final double unclogRPM = -4000;
 
         // Feeder & Indexer
-        public static final double feederSpeed = 1.0;
-        public static final double indexerSpeed = 1.0;
+        public static final double feederSpeed = 0.2;
+        public static final double indexerSpeed = 0.8;
 
 		public static final double feedingShooterRPM = shooterTargetRPM;
         public static final double feedingHoodAngle = 0;

@@ -124,7 +124,9 @@ public class ShooterSubsystem extends SubsystemBase {
 	}
 
 	public boolean isReadyToShoot() {
-		return getShooterRPM() >= ShooterConstants.shooterMinRPM;
+		double targetRPM = Math.max(0.0, getTargetRPM());
+		double thresholdRPM = Math.max(0.0, targetRPM*0.95);
+		return targetRPM > 0.0 && getShooterRPM() >= thresholdRPM;
 	}
 
 	public double getHoodAngle() {

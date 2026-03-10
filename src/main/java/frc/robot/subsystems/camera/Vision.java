@@ -125,7 +125,7 @@ public class Vision {
             new Camera(
                     "Camera_Module_Left",
                     new Transform3d(
-                            new Translation3d(0.32945, 0.14588, 0.269766),
+                            new Translation3d(0.3312, 0.14021, 0.27207),
                             new Rotation3d(0, 0.436332, 0))),
             new Camera(
                     "Camera_Module_Right",
