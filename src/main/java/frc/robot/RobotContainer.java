@@ -24,7 +24,7 @@ public class RobotContainer {
 	);
 
 	// Example field point to aim at
-	private static final Translation2d kLookAtPoint = new Translation2d(8.27, 4.1);
+	private static final Translation2d kLookAtPoint = new Translation2d(4.62, 4.03);
 	private static final double kReducedDriveScale = 0.50;
 
 	// Autonomous
