@@ -5,6 +5,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -40,6 +41,7 @@ public class SwerveSubsystem extends SubsystemBase {
 	private final DoubleSupplier joystickX, joystickY, joystickRotation;
 	private DriveMode driveMode = DriveMode.FIELD_RELATIVE;
 	private Translation2d hubPos = new Translation2d(0, 0);
+	private final double AUTO_HUB_INPUT_SCALE = 0.2;
 	private double inputMultiplier = 1;
 
 	private final Vision vision;
@@ -147,15 +149,15 @@ public class SwerveSubsystem extends SubsystemBase {
 	}
 
 	private void driveAutoTeam(Translation2d translation) {
-		driveTargetAngle(translation, 180);
+		driveTargetAngle(translation, Math.PI);
 	}
 
 	private void driveAutoHub(Translation2d translation) {
-		Translation2d compensatedPos = new Translation2d( // todo adjust subtraction depending on airtime or something
-				hubPos.getX() - swerveDrive.getFieldVelocity().vxMetersPerSecond,
-				hubPos.getY() - swerveDrive.getFieldVelocity().vyMetersPerSecond
+		Translation2d compensatedPos = new Translation2d( // todo adjust depending on robot velocity or something
+				hubPos.getX(),
+				hubPos.getY()
 		);
-		driveTargetAngle(translation, getRotationToPoint(compensatedPos));
+		driveTargetAngle(translation.times(AUTO_HUB_INPUT_SCALE), getRotationToPoint(compensatedPos));
 	}
 
 	private double getRotationToPoint(Translation2d target) {
@@ -165,12 +167,17 @@ public class SwerveSubsystem extends SubsystemBase {
 	}
 
 	private void driveTargetAngle(Translation2d translation, double targetAngle) {
+		ChassisSpeeds target = swerveDrive.swerveController.getRawTargetSpeeds(
+				translation.getX(), translation.getY(),
+				targetAngle,
+				swerveDrive.getOdometryHeading().getRadians()
+		);
+
 		swerveDrive.driveFieldOriented(
-				swerveDrive.swerveController.getTargetSpeeds(
-						translation.getX(), translation.getY(),
-						targetAngle,
-						swerveDrive.getOdometryHeading().getRadians(),
-						1 // we already multiply the input by maxSpeed
+				new ChassisSpeeds(
+						target.vxMetersPerSecond,
+						target.vyMetersPerSecond,
+						Math.min(target.omegaRadiansPerSecond, Constants.SwerveConstants.maxTurnRate)
 				)
 		);
 	}
