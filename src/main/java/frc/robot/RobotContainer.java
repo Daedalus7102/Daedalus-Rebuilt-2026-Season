@@ -5,9 +5,6 @@
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.subsystems.SwerveSubsystem;
@@ -21,9 +18,9 @@ public class RobotContainer {
 
 	// Subsystems
 	private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem(
-			() -> -m_driverController.getHID().getLeftX(),
-			() -> -m_driverController.getHID().getLeftY(),
-			() -> -m_driverController.getHID().getRightX()
+			() -> m_driverController.getHID().getLeftX(),
+			() -> m_driverController.getHID().getLeftY(),
+			() -> m_driverController.getHID().getRightX()
 	);
 
 	// Example field point to aim at
@@ -46,6 +43,8 @@ public class RobotContainer {
 
 		m_driverController.R1().onTrue(Commands.runOnce(() -> swerveSubsystem.setMode(DriveMode.AUTO_HUB), swerveSubsystem));
 		m_driverController.R1().onFalse(Commands.runOnce(swerveSubsystem::resetMode, swerveSubsystem));
+
+		m_driverController.options().onTrue(Commands.runOnce(swerveSubsystem::resetOdometryRotation, swerveSubsystem));
 	}
 
 	private double dPadXFromPov(int pov) {

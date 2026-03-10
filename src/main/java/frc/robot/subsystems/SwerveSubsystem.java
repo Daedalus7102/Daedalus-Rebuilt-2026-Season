@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -45,7 +46,7 @@ public class SwerveSubsystem extends SubsystemBase {
 	public SwerveSubsystem(DoubleSupplier joystickX, DoubleSupplier joystickY, DoubleSupplier joystickRotation) {
 		try {
 			File configDir = new File(Filesystem.getDeployDirectory(), "swerve");
-			swerveDrive = new SwerveParser(configDir).createSwerveDrive(Constants.SwerveConstants.kDriveMaxSpeed);
+			swerveDrive = new SwerveParser(configDir).createSwerveDrive(Constants.SwerveConstants.maxSpeed);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -57,11 +58,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
 	@Override
 	public void periodic() {
-		Translation2d translation = new Translation2d(
-				MathUtil.applyDeadband(joystickY.getAsDouble() * 2 * inputMultiplier, 0.1),
-				MathUtil.applyDeadband(joystickX.getAsDouble() * 2 * inputMultiplier, 0.1)
-		);
-		double rotation = MathUtil.applyDeadband(joystickRotation.getAsDouble() * 2 * inputMultiplier, 0.1);
+		Translation2d translation = getControllerTranslation();
+		double rotation = getControllerRotation();
 
 		SmartDashboard.putNumber("Translation X", translation.getX());
 		SmartDashboard.putNumber("Translation Y", translation.getY());
@@ -83,6 +81,26 @@ public class SwerveSubsystem extends SubsystemBase {
 			case AUTO_TEAM:
 				driveAutoTeam(translation);
 		}
+	}
+
+	private Translation2d getControllerTranslation() {
+		Translation2d translation = new Translation2d(
+				MathUtil.applyDeadband(-joystickY.getAsDouble(), 0.1),
+				MathUtil.applyDeadband(-joystickX.getAsDouble(), 0.1)
+		);
+
+		return translation.times(inputMultiplier * Constants.SwerveConstants.maxSpeed);
+	}
+
+	private double getControllerRotation() {
+		return MathUtil.applyDeadband(-joystickRotation.getAsDouble(), 0.1) *
+				Constants.SwerveConstants.maxTurnRate * inputMultiplier;
+	}
+
+	public void resetOdometryRotation() {
+		swerveDrive.resetOdometry(new Pose2d(
+				swerveDrive.getPose().getTranslation(), new Rotation2d(0)
+		));
 	}
 
 	/**
@@ -147,7 +165,7 @@ public class SwerveSubsystem extends SubsystemBase {
 						translation.getX(), translation.getY(),
 						targetAngle,
 						swerveDrive.getOdometryHeading().getRadians(),
-						Constants.SwerveConstants.kDriveMaxSpeed
+						1 // we already multiply the input by maxSpeed
 				)
 		);
 	}
