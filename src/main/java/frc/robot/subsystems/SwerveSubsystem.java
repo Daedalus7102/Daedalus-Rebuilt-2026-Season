@@ -13,9 +13,11 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import org.photonvision.EstimatedRobotPose;
 import swervelib.SwerveDrive;
+import swervelib.SwerveModule;
 import swervelib.parser.SwerveParser;
 
 import java.io.File;
+import java.util.Map;
 import java.util.function.DoubleSupplier;
 
 public class SwerveSubsystem extends SubsystemBase {
@@ -63,6 +65,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
 		SmartDashboard.putNumber("Translation X", translation.getX());
 		SmartDashboard.putNumber("Translation Y", translation.getY());
+		for (Map.Entry<String, SwerveModule> m : swerveDrive.getModuleMap().entrySet()) {
+			SmartDashboard.putNumber(m.getKey() + " RPM", m.getValue().getDriveMotor().getVelocity());
+		}
 		SmartDashboard.putNumber("Rotation", rotation);
 		SmartDashboard.putString("Mode", driveMode.name());
 
