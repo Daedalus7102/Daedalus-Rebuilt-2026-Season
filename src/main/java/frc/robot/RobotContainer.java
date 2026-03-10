@@ -4,17 +4,11 @@
 
 package frc.robot;
 
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.auto.NamedCommands;
-
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
+import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.subsystems.SwerveSubsystem.DriveMode;
 import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
@@ -23,27 +17,27 @@ import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.tools.AllianceTargetPoses;
 
 public class RobotContainer {
-	private enum AimOverrideButton {
-		NONE,
-		L1,
-		L2,
-		R1
-	}
 
 	// Controllers
 	public static final CommandPS5Controller m_driverController = new CommandPS5Controller(0);
 	public static final CommandPS5Controller m_operatorController = new CommandPS5Controller(1);
 
 	// Subsystems
+	private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem(
+			() -> m_driverController.getHID().getLeftX(),
+			() -> m_driverController.getHID().getLeftY(),
+			() -> m_driverController.getHID().getRightX(),
+			() -> dPadXFromPov(m_driverController.getHID().getPOV()),
+			() -> dPadYFromPov(m_driverController.getHID().getPOV())
+	);
 	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
 	private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
 	private final ShooterSubsystem m_ShooterSubsystem = new ShooterSubsystem();
 	private final FeederSubsystem m_FeederSubsystem = new FeederSubsystem();
 
 	// Example field point to aim at
-	private static final Translation2d kLookAtPoint = new Translation2d(8.27, 4.10);
-	private static final double kReducedDriveScale = 0.30;
-	private AimOverrideButton m_activeAimOverrideButton = AimOverrideButton.NONE;
+	private static final Translation2d kLookAtPoint = new Translation2d(4.62, 4.03);
+	private static final double kReducedDriveScale = 0.50;
 
 	// Autonomous
 	private SendableChooser<Command> m_autoChooser;
@@ -60,6 +54,7 @@ public class RobotContainer {
 		m_swerveSubsystem.setReducedVelocityScale(kReducedDriveScale);
 		
 		configureBindings();
+		swerveSubsystem.setHubPos(kLookAtPoint);
 
 		m_autoChooser = AutoBuilder.buildAutoChooser();
 		SmartDashboard.putData("AutoR", m_autoChooser);
@@ -98,48 +93,13 @@ public class RobotContainer {
 				m_ShooterSubsystem
 		);
 		// Driver Controller
+		m_driverController.L1().onTrue(Commands.runOnce(() -> swerveSubsystem.setMode(DriveMode.AUTO_TEAM), swerveSubsystem));
+		m_driverController.L1().onFalse(Commands.runOnce(swerveSubsystem::resetMode, swerveSubsystem));
 
-		// Zero gyro heading on button press.
-		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
+		m_driverController.R1().onTrue(Commands.runOnce(() -> swerveSubsystem.setMode(DriveMode.AUTO_HUB), swerveSubsystem));
+		m_driverController.R1().onFalse(Commands.runOnce(swerveSubsystem::resetMode, swerveSubsystem));
 
-		m_swerveSubsystem.setJoystickSuppliers(
-			() -> -m_driverController.getHID().getLeftY(),
-			() -> -m_driverController.getHID().getLeftX(),
-			() -> -m_driverController.getHID().getRightX()
-		);
-		m_swerveSubsystem.setDPadSuppliers(
-			() -> dPadXFromPov(m_driverController.getHID().getPOV()),
-			() -> dPadYFromPov(m_driverController.getHID().getPOV())
-		);
-
-		// Last pressed aim button wins.
-		m_driverController.L1().onTrue(Commands.runOnce(() -> {
-			setAimOverride(AimOverrideButton.L1);
-			m_intakeSubsystem.intakeOut();
-		}, m_swerveSubsystem, m_intakeSubsystem));
-		m_driverController.L1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
-
-		// Publish current distance to alliance tower and draw line robot->tower on Field2d.
-		m_driverController.square().onTrue(Commands.runOnce(this::updateTowerDistanceDashboard, m_swerveSubsystem));
-
-		m_driverController.L2().onTrue(Commands.runOnce(() -> {
-			setAimOverride(AimOverrideButton.L2);
-			m_intakeSubsystem.intakeOut();
-		}, m_swerveSubsystem, m_intakeSubsystem));
-		m_driverController.L2().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
-
-		// Driver R1: tap once to aim at alliance tower, tap again to cancel.
-		m_driverController.R1().onTrue(Commands.runOnce(() -> {
-			if (m_activeAimOverrideButton == AimOverrideButton.R1) {
-				m_swerveSubsystem.setUseReducedVelocity(false);
-				clearAimOverride(AimOverrideButton.R1);
-			} else {
-				m_swerveSubsystem.setUseReducedVelocity(true);
-				setAimOverride(AimOverrideButton.R1);
-			}
-		}, m_swerveSubsystem));
-		m_driverController.R1().toggleOnTrue(testAimToggleCommand);
-
+		m_driverController.options().onTrue(Commands.runOnce(swerveSubsystem::resetOdometryRotation, swerveSubsystem));
 
 		// Operator Controller
 		// Intake test buttons (driver controller)
@@ -173,36 +133,7 @@ public class RobotContainer {
 		// Operator R1: shoot only while held.
 		m_operatorController.R1().whileTrue(shootToggleCommand);
 
-		
-	}
 
-	private void setAimOverride(AimOverrideButton button) {
-		m_activeAimOverrideButton = button;
-		switch (button) {
-			case L1 -> {
-				m_swerveSubsystem.setUseReducedVelocity(false);
-				m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(0.0));
-			}
-			case L2 -> {
-				m_swerveSubsystem.setUseReducedVelocity(false);
-				m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(180.0));
-			}
-			case R1 -> m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance());
-			case NONE -> {
-				m_swerveSubsystem.setUseFixedOmega(false);
-				m_swerveSubsystem.setUseReducedVelocity(false);
-				return;
-			}
-		}
-		m_swerveSubsystem.setUseFixedOmega(true);
-	}
-
-	private void clearAimOverride(AimOverrideButton button) {
-		if (m_activeAimOverrideButton == button) {
-			m_activeAimOverrideButton = AimOverrideButton.NONE;
-			m_swerveSubsystem.setUseFixedOmega(false);
-			m_swerveSubsystem.setUseReducedVelocity(false);
-		}
 	}
 
 	private void updateTowerDistanceDashboard() {
@@ -212,13 +143,6 @@ public class RobotContainer {
 
 		SmartDashboard.putNumber("AllianceTowerDistanceM", distanceMeters);
 		m_swerveSubsystem.setFieldLine("AllianceTowerLine", robotTranslation, towerTranslation);
-	}
-
-	private void refreshDynamicAimTargets() {
-		if (m_activeAimOverrideButton == AimOverrideButton.R1) {
-			// Keep refreshing tower target so heading keeps updating with robot pose.
-			m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance());
-		}
 	}
 
 	private double dPadXFromPov(int pov) {
@@ -255,8 +179,6 @@ public class RobotContainer {
 
 	public Runnable dashboardLoop() {
 		return () -> {
-			refreshDynamicAimTargets();
-			m_swerveSubsystem.updateDashboard();
 		};
 	}
 }

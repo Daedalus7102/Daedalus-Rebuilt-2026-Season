@@ -2,8 +2,6 @@ package frc.robot;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 
@@ -18,92 +16,11 @@ public class Constants {
 
     // Drive Constants
     public static class SwerveConstants {
-        // Chassis Constraints
-        private static final double kWheelToWheelDistance = 0.56; // Distance between wheels in meters
-        // Module Constants
-        public static final double kWheelDiameter = 0.101; // Wheel diameter in meters
-        public static final double kWheelCircumference = Math.PI * kWheelDiameter;
-        public static final double kDriveMaxSpeed = 3.6; // Maximum drive speed in meters per second
-        public static final double kDriveMaxAcc = 0.6; // Maximum drive acceleration in meters per second squared
-        public static final double kDriveGearRatio = 1d/6.75d; // 5.36;
-        public static final double kTurnMaxSpeed = Math.PI*1.5; // Maximum turn speed in radians per second
-        public static final double kTurnMaxAcc = 0.15; // Maximum turn acceleration in radians per second squared
-        public static final double kTurnGearRatio = 150d/7d;
-        // Drive encoder
-        public static final double kDriveVelocityFactor = (kDriveGearRatio * kWheelCircumference) / 60.0; // m/s per RPM
-        // Turning encoder
-        public static final double kTurnPositionFactor = 360.0 / kTurnGearRatio; // deg / motor rot
-        public static final double kTurnVelocityFactor = kTurnPositionFactor / 60.0; // deg/s per RPM
-        // Swerve Drive Kinematics
-        public final static SwerveDriveKinematics kKinematics = new SwerveDriveKinematics(
-                new Translation2d(kWheelToWheelDistance / 2d, kWheelToWheelDistance / 2d), // Frront Left Module
-                new Translation2d(kWheelToWheelDistance / 2d, -kWheelToWheelDistance / 2d), // Front Right Module
-                new Translation2d(-kWheelToWheelDistance / 2d, kWheelToWheelDistance / 2d), // Back Left Module
-                new Translation2d(-kWheelToWheelDistance / 2d, -kWheelToWheelDistance / 2d) // Back Right Module
-        );
-        // Swerve Modules
+        public static final double maxSpeed = 3; // Maximum drive speed in meters per second
+		public static final double maxTurnRate = 2; // max turn rate in radians per second
+	}
 
-        //    .---.         .---.   Forward = 0°
-        //    | 1 |▩▩▩▩▩▩▩▩▩| 2 |
-        //    '---'         '---'    (x+)|
-        //      █     /°\     █          |
-        //      █      |      █   (y+)---|---(y-)
-        //      █      |      █          |
-        //    .---.         .---.        |(x-)
-        //    | 3 |▩▩▩▩▩▩▩▩▩| 4 |        
-        //    '---'         '---'
-
-        public static final int kFrontLeftDriveMotorID = 1;
-        public static final int kFrontLeftTurnMotorID = 2;
-        public static final int kFrontLeftCANcoderID = 1;
-        public static final double kFrontLeftCANcoderOffset = -0.311035;
-        public static final boolean kFrontLeftDriveInverted = false;
-
-        public static final int kFrontRightDriveMotorID = 3;
-        public static final int kFrontRightTurnMotorID = 4;
-        public static final int kFrontRightCANcoderID = 2;
-        public static final double kFrontRightCANcoderOffset = 0.305664;
-        public static final boolean kFrontRightDriveInverted = true;
-
-        public static final int kBackLeftDriveMotorID = 5;
-        public static final int kBackLeftTurnMotorID = 6;
-        public static final int kBackLeftCANcoderID = 3;
-        public static final double kBackLeftCANcoderOffset = 0.433350;
-        public static final boolean kBackLeftDriveInverted = false;
-
-        public static final int kBackRightDriveMotorID = 7;
-        public static final int kBackRightTurnMotorID = 8;
-        public static final int kBackRightCANcoderID = 4;
-        public static final double kBackRightCANcoderOffset = 0.055908;
-        public static final boolean kBackRightDriveInverted = true;
-
-        // Drive Motor PID Constants
-        public static final double kDriveP = 0.28, kDriveI = 0.0, kDriveD = 0.0, kDriveFF = 2.25;
-        // Turning Motor PID Constants
-        public static final double kTurnP = 0.015, kTurnI = 0.0, kTurnD = 0.0;
-        // Drive Motor Configuration
-        public static final int kDriveCurrentLimitA = 40;
-        public static final double kDriveVoltageComp = 12.0;
-        public static final double kDriveOpenLoopRamp = 0.5;
-        public static final double kDriveClosedLoopRamp = 0.5;
-        // Turning Motor Configuration
-        public static final int kTurnCurrentLimitA = 30;
-        public static final double kTurnVoltageComp = 12.0;
-        public static final double kTurnOpenLoopRamp = 0.15;
-        public static final double kTurnClosedLoopRamp = 0.15;
-        // CAN bus
-        public static final String kCANbus = "Drivetrain";
-        // Pigeon ID
-        public static final int kPigeonID = 0;
-    }
-    public static class IntakeConstants {
-        // Motor IDs
-        public static final int kRollerMotorID = 12;
-        public static final int kRotateMotorID = 10;
-        public static final int kRotateFollowerMotorID = 11;
-    }
-
-    public static class ShooterConstants {
+	public static class ShooterConstants {
 		public static final int shootMotor1ID = 23;
 		public static final int shootMotor2ID = 24;
 		public static final int shootMotor3ID = 25;
@@ -114,10 +31,10 @@ public class Constants {
 		public static final double maxHoodAngle = 30;
 		public static final double minHoodAngle = 10;
 
-        // Shooter motor configuration
-        public static final int shootCurrentLimit = 35;
-        public static final double shootRampRate = 0.05;
-        public static final double voltageCompensation = 12;
+		// Shooter motor configuration
+		public static final int shootCurrentLimit = 35;
+		public static final double shootRampRate = 0.05;
+		public static final double voltageCompensation = 12;
 
 		// Shooter closed-loop (Spark velocity control in RPM)
 		// 1:1
@@ -126,34 +43,33 @@ public class Constants {
 		public static final double shooterD = 0.002;
 		public static final double shooterKV = 0.0004;
 
-        // Shooter hood closed-loop (Position control through absolute encoder)
-        public static final double hoodP = 0.032;
-        public static final double hoodI = 0;
-        public static final double hoodD = 0;
-        public static final double hoodKV = 0;
-        public static final int hoodCurrentLimit = 30;
-        public static final double hoodRampRate = 0.5;
-        public static final double hoodClosedLoopMinOutput = -0.4;
-        public static final double hoodClosedLoopMaxOutput = 0.4;
-        public static final double hoodReadyToleranceDeg = 1.0;
+		// Shooter hood closed-loop (Position control through absolute encoder)
+		public static final double hoodP = 0.032;
+		public static final double hoodI = 0;
+		public static final double hoodD = 0;
+		public static final double hoodKV = 0;
+		public static final int hoodCurrentLimit = 30;
+		public static final double hoodRampRate = 0.5;
+		public static final double hoodClosedLoopMinOutput = -0.4;
+		public static final double hoodClosedLoopMaxOutput = 0.4;
+		public static final double hoodReadyToleranceDeg = 1.0;
 
 		public static final double shooterTargetRPM = 5000;
 		public static final double shooterReadyToleranceRPM = 200;
 		public static final double shooterMinRPM = 3000;
-        public static final double unclogRPM = -4000;
+		public static final double unclogRPM = -4000;
 
-        // Feeder & Indexer
-        public static final double feederSpeed = 0.2;
-        public static final double indexerSpeed = 0.8;
+		// Feeder & Indexer
+		public static final double feederSpeed = 0.2;
+		public static final double indexerSpeed = 0.8;
 
 		public static final double feedingShooterRPM = shooterTargetRPM;
-        public static final double feedingHoodAngle = 0;
+		public static final double feedingHoodAngle = 0;
 	}
 
-    public static class VisionConstants {
-        // Baseline confidence when only one tag contributes to the estimate.
-        public static final Matrix<N3, N1> singleTagDeviation = VecBuilder.fill(4, 4, 8);
-        // Higher confidence baseline when multiple tags are used.
-        public static final Matrix<N3, N1> multiTagDeviation = VecBuilder.fill(0.5, 0.5, 1);
-    }
+	public static class VisionConstants {
+		// placeholders
+		public static final Matrix<N3, N1> singleTagDeviation = VecBuilder.fill(4, 4, 8);
+		public static final Matrix<N3, N1> multiTagDeviation = VecBuilder.fill(0.5, 0.5, 1);
+	}
 }
