@@ -7,110 +7,82 @@ package frc.robot;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 /**
- * The methods in this class are called automatically corresponding to each mode, as described in
- * the TimedRobot documentation. If you change the name of this class or the package after creating
- * this project, you must also update the Main.java file in the project.
+ * The methods in this class are called automatically corresponding to each
+ * mode, as described in the TimedRobot documentation.
+ *
+ * NOTE: With ChoreoLib's AutoChooser, you no longer need to call
+ * getAutonomousCommand() here.  AutoChooser binds itself to
+ * RobotModeTriggers.autonomous() inside RobotContainer, so the selected
+ * routine starts / stops automatically.
  */
 public class Robot extends TimedRobot {
 
-  private final RobotContainer m_robotContainer;
-  private double m_lastLoopTimestampSeconds = 0.0;
-  private double m_lastLoopDiagPublishSeconds = 0.0;
-  private int m_loopOverrunCount = 0;
+    private final RobotContainer m_robotContainer;
+    private double m_lastLoopTimestampSeconds = 0.0;
+    private double m_lastLoopDiagPublishSeconds = 0.0;
+    private int    m_loopOverrunCount = 0;
 
-  private static final double kLoopOverrunThresholdSeconds = 0.022;
-  private static final double kLoopDiagPublishPeriodSeconds = 0.5;
+    private static final double kLoopOverrunThresholdSeconds = 0.022;
+    private static final double kLoopDiagPublishPeriodSeconds = 0.5;
 
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
-  public Robot() {
-    // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
-    // autonomous chooser on the dashboard.
-    m_robotContainer = new RobotContainer();
-  }
-
-  /**
-   * This function is called every 20 ms, no matter the mode. Use this for items like diagnostics
-   * that you want ran during disabled, autonomous, teleoperated and test.
-   *
-   * <p>This runs after the mode specific periodic functions, but before LiveWindow and
-   * SmartDashboard integrated updating.
-   */
-  @Override
-  public void robotPeriodic() {
-    double nowSeconds = Timer.getFPGATimestamp();
-    double loopDtSeconds = nowSeconds - m_lastLoopTimestampSeconds;
-    if (m_lastLoopTimestampSeconds > 0.0 && loopDtSeconds > kLoopOverrunThresholdSeconds) {
-      m_loopOverrunCount++;
+    public Robot() {
+        m_robotContainer = new RobotContainer();
     }
-    m_lastLoopTimestampSeconds = nowSeconds;
 
-    // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
-    // commands, running already-scheduled commands, removing finished or interrupted commands,
-    // and running subsystem periodic() methods.  This must be called from the robot's periodic
-    // block in order for anything in the Command-based framework to work.
-    CommandScheduler.getInstance().run();
+    /**
+     * robotPeriodic runs every 20 ms in every mode.
+     * CommandScheduler.run() must be called here for the entire
+     * command-based framework (including ChoreoLib triggers) to work.
+     */
+    @Override
+    public void robotPeriodic() {
+        double nowSeconds    = Timer.getFPGATimestamp();
+        double loopDtSeconds = nowSeconds - m_lastLoopTimestampSeconds;
 
-    if (nowSeconds - m_lastLoopDiagPublishSeconds >= kLoopDiagPublishPeriodSeconds) {
-      SmartDashboard.putNumber("RobotLoopDtMs", loopDtSeconds * 1000.0);
-      SmartDashboard.putNumber("RobotLoopOverruns", m_loopOverrunCount);
-      m_lastLoopDiagPublishSeconds = nowSeconds;
+        if (m_lastLoopTimestampSeconds > 0.0 && loopDtSeconds > kLoopOverrunThresholdSeconds) {
+            m_loopOverrunCount++;
+        }
+        m_lastLoopTimestampSeconds = nowSeconds;
+
+        // This runs all scheduled commands, polls buttons, and calls subsystem
+        // periodic() methods.  ChoreoLib's AutoChooser relies on this too.
+        CommandScheduler.getInstance().run();
+
+        if (nowSeconds - m_lastLoopDiagPublishSeconds >= kLoopDiagPublishPeriodSeconds) {
+            SmartDashboard.putNumber("RobotLoopDtMs",    loopDtSeconds * 1000.0);
+            SmartDashboard.putNumber("RobotLoopOverruns", m_loopOverrunCount);
+            m_lastLoopDiagPublishSeconds = nowSeconds;
+        }
     }
-  }
 
-  /** This function is called once each time the robot enters Disabled mode. */
-  @Override
-  public void disabledInit() {}
+    @Override public void disabledInit()    {}
+    @Override public void disabledPeriodic(){}
 
-  @Override
-  public void disabledPeriodic() {}
+    @Override
+    public void autonomousInit() {
+        // AutoChooser already handles scheduling via RobotModeTriggers.autonomous().
+        // We only need the subsystem-level init (reset drive mode, etc.).
+        m_robotContainer.onAutonomousInit();
+    }
 
-  /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
-  @Override
-  public void autonomousInit() {
-    m_robotContainer.onAutonomousInit();
+    @Override public void autonomousPeriodic() {}
 
-    // schedule the autonomous command (example)
-  }
+    @Override
+    public void teleopInit() {
+        m_robotContainer.onTeleopInit();
+    }
 
-  /** This function is called periodically during autonomous. */
-  @Override
-  public void autonomousPeriodic() {}
+    @Override public void teleopPeriodic() {}
 
-  @Override
-  public void teleopInit() {
-    m_robotContainer.onTeleopInit();
-    // This makes sure that the autonomous stops running when
-    // teleop starts running. If you want the autonomous to
-    // continue until interrupted by another command, remove
-    // this line or comment it out.
-  }
+    @Override
+    public void testInit() {
+        CommandScheduler.getInstance().cancelAll();
+    }
 
-  /** This function is called periodically during operator control. */
-  @Override
-  public void teleopPeriodic() {}
-
-  @Override
-  public void testInit() {
-    // Cancels all running commands at the start of test mode.
-    CommandScheduler.getInstance().cancelAll();
-  }
-
-  /** This function is called periodically during test mode. */
-  @Override
-  public void testPeriodic() {}
-
-  /** This function is called once when the robot is first started up. */
-  @Override
-  public void simulationInit() {}
-
-  /** This function is called periodically whilst in simulation. */
-  @Override
-  public void simulationPeriodic() {}
+    @Override public void testPeriodic()       {}
+    @Override public void simulationInit()     {}
+    @Override public void simulationPeriodic() {}
 }
