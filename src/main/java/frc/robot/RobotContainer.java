@@ -18,6 +18,8 @@ import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.SwerveSubsystem.DriveMode;
 import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.led.LEDController;
+import frc.robot.subsystems.led.LEDState;
 import frc.robot.subsystems.shooter.FeederSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.tools.AllianceTargetPoses;
@@ -39,6 +41,8 @@ public class RobotContainer {
 	private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
 	private final ShooterSubsystem m_ShooterSubsystem = new ShooterSubsystem();
 	private final FeederSubsystem m_FeederSubsystem = new FeederSubsystem();
+
+	public static final LEDController leds = new LEDController();
 
 	// Example field point to aim at
 	private static final Translation2d kLookAtPoint = new Translation2d(4.62, 4.03);
@@ -271,12 +275,14 @@ public class RobotContainer {
 	public void onAutonomousInit() {
 		m_swerveSubsystem.resetMode();
 		m_swerveSubsystem.setScaleInput(false);
+		leds.set(LEDState.AUTO);
 		//CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.AUTO));
 	}
 
 	public void onTeleopInit() {
 		m_swerveSubsystem.resetMode();
 		m_swerveSubsystem.setScaleInput(false);
+		leds.set(LEDState.OFF);
 		//CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.IDLE));
 	}
 

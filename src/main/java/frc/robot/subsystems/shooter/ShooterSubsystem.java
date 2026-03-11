@@ -14,6 +14,8 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.RobotContainer;
+import frc.robot.subsystems.led.LEDState;
 
 public class ShooterSubsystem extends SubsystemBase {
 	private final SparkFlex shooterMotor1;
@@ -72,6 +74,7 @@ public class ShooterSubsystem extends SubsystemBase {
 		shooterMotor3.stopMotor();
 
 		hoodMotor.getClosedLoopController().setSetpoint(ShooterConstants.minHoodAngle, ControlType.kPosition);
+		RobotContainer.leds.set(LEDState.OFF);
 	}
 
 	public void unclog() {
@@ -86,6 +89,7 @@ public class ShooterSubsystem extends SubsystemBase {
 		shooterMotor1.getClosedLoopController().setSetpoint(clampedRPM, ControlType.kVelocity);
 		shooterMotor2.getClosedLoopController().setSetpoint(clampedRPM, ControlType.kVelocity);
 		shooterMotor3.getClosedLoopController().setSetpoint(clampedRPM, ControlType.kVelocity);
+		RobotContainer.leds.set(LEDState.SHOOT);
 	}
 
 	public void setMeasuredRPM(double distance) {
