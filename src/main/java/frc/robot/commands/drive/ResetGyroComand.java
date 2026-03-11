@@ -1,7 +1,7 @@
 package frc.robot.commands.drive;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.drive.SwerveSubsystem;
+import frc.robot.subsystems.SwerveSubsystem;
 
 public class ResetGyroComand extends Command {
     private SwerveSubsystem swerveSubsystem;
@@ -12,7 +12,7 @@ public class ResetGyroComand extends Command {
 
     @Override
     public void initialize() {
-        swerveSubsystem.zeroGyro();
+        swerveSubsystem.resetOdometryRotation();
         addRequirements(swerveSubsystem);
     }
 

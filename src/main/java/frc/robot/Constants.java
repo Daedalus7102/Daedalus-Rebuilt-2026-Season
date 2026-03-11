@@ -20,6 +20,13 @@ public class Constants {
 		public static final double maxTurnRate = 2; // max turn rate in radians per second
 	}
 
+	public static class IntakeConstants {
+		// Motor IDs
+		public static final int kRollerMotorID = 12;
+		public static final int kRotateMotorID = 10;
+		public static final int kRotateFollowerMotorID = 11;
+	}
+
 	public static class ShooterConstants {
 		public static final int shootMotor1ID = 23;
 		public static final int shootMotor2ID = 24;
