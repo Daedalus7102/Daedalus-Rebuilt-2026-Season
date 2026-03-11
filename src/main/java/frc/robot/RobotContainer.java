@@ -5,6 +5,8 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathPlannerPath;
+import edu.wpi.first.wpilibj.DriverStation;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -12,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
+import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.SwerveSubsystem.DriveMode;
 import frc.robot.subsystems.intake.IntakeSubsystem;
@@ -45,8 +48,37 @@ public class RobotContainer {
 	private SendableChooser<Command> m_autoChooser;
 
 	public RobotContainer() {
-		NamedCommands.registerCommand("nothing", Commands.sequence(
+		NamedCommands.registerCommand("nothing", Commands.none());
+
+		// Intake
+		NamedCommands.registerCommand("DeployIntake",
+			Commands.runOnce(m_intakeSubsystem::intakeOut, m_intakeSubsystem));
+		NamedCommands.registerCommand("StartRollers",
+			Commands.runOnce(() -> m_intakeSubsystem.setRoller(1.0), m_intakeSubsystem));
+		NamedCommands.registerCommand("StopRollers",
+			Commands.runOnce(m_intakeSubsystem::stopRoller, m_intakeSubsystem));
+		NamedCommands.registerCommand("RetractIntake",
+			Commands.runOnce(m_intakeSubsystem::intakeIn, m_intakeSubsystem));
+
+		// Shooter
+		NamedCommands.registerCommand("SpinUpShooter",
+			Commands.runOnce(
+				() -> m_ShooterSubsystem.setShooterRPM(ShooterConstants.shooterTargetRPM),
+				m_ShooterSubsystem));
+
+		NamedCommands.registerCommand("AimAndShoot", Commands.sequence(
+			Commands.runOnce(
+				() -> m_ShooterSubsystem.setHoodAngle(ShooterConstants.feedingHoodAngle),
+				m_ShooterSubsystem),
+			Commands.waitUntil(m_ShooterSubsystem::isReadyToShoot),
+			Commands.runOnce(m_FeederSubsystem::enable, m_FeederSubsystem),
+			Commands.waitSeconds(0.5),
+			Commands.runOnce(() -> {
+				m_FeederSubsystem.disable();
+				m_ShooterSubsystem.disable();
+			}, m_ShooterSubsystem, m_FeederSubsystem)
 		));
+
 		// Autonomous event markers: explicit field-based aiming helpers.
 		NamedCommands.registerCommand("AimHubOn", Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_HUB), m_swerveSubsystem));
 		NamedCommands.registerCommand("AimHubOff", Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
@@ -57,6 +89,11 @@ public class RobotContainer {
 		m_swerveSubsystem.setHubPos(kLookAtPoint);
 
 		m_autoChooser = AutoBuilder.buildAutoChooser();
+		m_autoChooser.addOption("Blue Left 2 Cycle",  blueLeft2Cycle());
+		m_autoChooser.addOption("Blue Right 2 Cycle", blueRight2Cycle());
+		m_autoChooser.addOption("Blue Middle Go L",   singlePath("BlueMiddle_Go_L"));
+		m_autoChooser.addOption("Blue Middle Go R",   singlePath("BlueMiddle_Go_R"));
+
 		SmartDashboard.putData("AutoR", m_autoChooser);
 		SmartDashboard.putNumber("TestAimTargetAngle", 10);
 		SmartDashboard.putNumber("TestAimTargetRPM", 4000);
@@ -163,9 +200,73 @@ public class RobotContainer {
 		};
 	}
 
+	private Command singlePath(String name) {
+		try {
+			return AutoBuilder.followPath(PathPlannerPath.fromChoreoTrajectory(name));
+		} catch (Exception e) {
+			DriverStation.reportError(
+				"Failed to load path: " + name + " - " + e.getMessage(),
+				e.getStackTrace());
+			return Commands.none();
+		}
+	}
+
+	/**
+	 * Blue Left 2-Cycle: Collect -> Return+Shoot -> Collect -> Return+Shoot
+	 * BlueLeft_Return ends at BlueLeft_Collect start pose.
+	 */
+	private Command blueLeft2Cycle() {
+		return Commands.sequence(
+			singlePath("BlueLeft_Collect"),
+			singlePath("BlueLeft_Return"),
+			singlePath("BlueLeft_Collect"),
+			singlePath("BlueLeft_Return")
+		);
+	}
+
+	/**
+	 * Blue Right 2-Cycle: Collect -> Return+Shoot -> Collect -> Return+Shoot
+	 * BlueRight_Return ends at BlueRight_Collect start pose.
+	 */
+	private Command blueRight2Cycle() {
+		return Commands.sequence(
+			singlePath("BlueRight_Collect"),
+			singlePath("BlueRight_Return"),
+			singlePath("BlueRight_Collect"),
+			singlePath("BlueRight_Return")
+		);
+	}
+
+	/**
+	 * Blue Middle to Left Cycle:
+	 * Middle->Left collect -> Left return+shoot -> Left collect -> Left return+shoot
+	 */
+	private Command blueMiddleToLeftCycle() {
+		return Commands.sequence(
+			singlePath("BlueMiddle_Go_L"),
+			singlePath("BlueLeft_Return"),
+			singlePath("BlueLeft_Collect"),
+			singlePath("BlueLeft_Return")
+		);
+	}
+
+	/**
+	 * Blue Middle to Right Cycle:
+	 * Middle->Right collect -> Right return+shoot -> Right collect -> Right return+shoot
+	 */
+	private Command blueMiddleToRightCycle() {
+		return Commands.sequence(
+			singlePath("BlueMiddle_Go_R"),
+			singlePath("BlueRight_Return"),
+			singlePath("BlueRight_Collect"),
+			singlePath("BlueRight_Return")
+		);
+	}
+
 	public Command getAutonomousCommand() {
 		return m_autoChooser.getSelected();
 	}
+
 
 	public void onAutonomousInit() {
 		m_swerveSubsystem.resetMode();
