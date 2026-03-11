@@ -70,7 +70,10 @@ public class RobotContainer {
 	private void configureBindings() {
 
 		Command aimToggleCommand = Commands.run(
-				() -> m_ShooterSubsystem.aim(10),
+				() -> {
+					m_ShooterSubsystem.aim(AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.getPose()));
+					updateTowerDistanceDashboard();
+				},
 				m_ShooterSubsystem
 		).finallyDo((_interrupted) -> m_ShooterSubsystem.disable());
 
@@ -138,7 +141,7 @@ public class RobotContainer {
 				setAimOverride(AimOverrideButton.R1);
 			}
 		}, m_swerveSubsystem));
-		m_driverController.R1().toggleOnTrue(testAimToggleCommand);
+		m_driverController.R1().toggleOnTrue(aimToggleCommand);
 
 
 		// Operator Controller
