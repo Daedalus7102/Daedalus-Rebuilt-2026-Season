@@ -47,7 +47,7 @@ public class SwerveSubsystem extends SubsystemBase {
 	private DriveMode driveMode = DriveMode.NORMAL;
 	private Translation2d hubPos = new Translation2d(0, 0);
 	private final double AUTO_HUB_INPUT_SCALE = 0.2;
-	private final double DPAD_SCALE = 0.05;
+	private final double DPAD_SCALE = 0.2;
 	public double inputMultiplier = 1;
 	private boolean scaleInput = false;
 
