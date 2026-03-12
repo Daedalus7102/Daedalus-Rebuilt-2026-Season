@@ -87,7 +87,12 @@ public class SwerveSubsystem extends SubsystemBase {
         // try to spin 350° when a 10° correction is needed.
         headingController.enableContinuousInput(-Math.PI, Math.PI);
 
-        // ── PathPlanner AutoBuilder.configure() has been REMOVED.
+        if (edu.wpi.first.wpilibj.RobotBase.isSimulation()) {
+            swerveDrive.resetOdometry(new Pose2d(
+                new Translation2d(3.53, 7.29),
+                new Rotation2d(0)
+            ));
+        }// ── PathPlanner AutoBuilder.configure() has been REMOVED.
     }
 
     //ChoreoLib trajectory follower
@@ -211,14 +216,14 @@ public class SwerveSubsystem extends SubsystemBase {
                 * Constants.SwerveConstants.maxTurnRate * getScaleInputValue();
     }
 
-    // ── Odometry helpers ──────────────────────────────────────────────────────
+    // ── Odometry helpers
 
     public void resetOdometryRotation() {
         swerveDrive.resetOdometry(new Pose2d(
                 swerveDrive.getPose().getTranslation(), new Rotation2d(0)));
     }
 
-    // ── Drive mode setters ────────────────────────────────────────────────────
+    // ── Drive mode setters
 
     public void setHubPos(Translation2d pos) { hubPos = pos; }
 
@@ -226,14 +231,13 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public void resetMode() { driveMode = DriveMode.NORMAL; }
 
-    // ── Vision measurement integration ────────────────────────────────────────
-
+    // ── Vision measurement integration
     public void addVisionMeasurement(EstimatedRobotPose pose, Matrix<N3, N1> deviation) {
         swerveDrive.addVisionMeasurement(
                 pose.estimatedPose.toPose2d(), pose.timestampSeconds, deviation);
     }
 
-    // ── Internal drive helpers ────────────────────────────────────────────────
+    // ── Internal drive helpers 
 
     private void driveAutoTeam(Translation2d translation) {
         driveTargetAngle(translation, Math.PI);

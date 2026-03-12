@@ -105,10 +105,12 @@ public class RobotContainer {
         // addRoutine() accepts a supplier; the routine is only built when selected.
         // addCmd() does the same for plain Command-based autos.
         m_autoChooser = new AutoChooser();
+         m_autoChooser.addRoutine("Just Move",            this::justMove);
         m_autoChooser.addRoutine("Blue Left 2 Cycle",   this::blueLeft2Cycle);
         m_autoChooser.addRoutine("Blue Right 2 Cycle",  this::blueRight2Cycle);
         m_autoChooser.addRoutine("Blue Middle Go L",    this::blueMiddleToLeftCycle);
         m_autoChooser.addRoutine("Blue Middle Go R",    this::blueMiddleToRightCycle);
+
 
         // Publish chooser to SmartDashboard (same key as before)
         SmartDashboard.putData("AutoR", m_autoChooser);
@@ -274,6 +276,19 @@ public class RobotContainer {
         return1.done().onTrue(collect.cmd());
         collect.done().onTrue(return2.cmd());
 
+        return routine;
+    }
+
+    private AutoRoutine justMove() {
+        AutoRoutine routine = m_autoFactory.newRoutine("justMove");
+ 
+        AutoTrajectory move = routine.trajectory("just_move");
+ 
+        routine.active().onTrue(Commands.sequence(
+                move.resetOdometry(),
+                move.cmd()
+        ));
+ 
         return routine;
     }
 
