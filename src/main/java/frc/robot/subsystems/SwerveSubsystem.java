@@ -92,7 +92,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 new Translation2d(3.53, 7.29),
                 new Rotation2d(0)
             ));
-        }// ── PathPlanner AutoBuilder.configure() has been REMOVED.
+        }
     }
 
     //ChoreoLib trajectory follower
@@ -106,7 +106,7 @@ public class SwerveSubsystem extends SubsystemBase {
      *   output = feedforward (from sample's vx/vy/omega)
      *          + feedback    (PID correction for positional error)
      * </pre>
-     *
+     * viene de la documentacion de choreo
      * @param sample trajectory state interpolated to the current timestamp
      */
     public void followTrajectory(SwerveSample sample) {
@@ -127,8 +127,6 @@ public class SwerveSubsystem extends SubsystemBase {
         swerveDrive.driveFieldOriented(speeds);
     }
 
-    //Pose helpers (used by AutoFactory)
-
     /** Returns the current robot pose from odometry (+ vision fused). */
     public Pose2d getPose() {
         return swerveDrive.getPose();
@@ -139,8 +137,7 @@ public class SwerveSubsystem extends SubsystemBase {
         swerveDrive.resetOdometry(pose);
     }
 
-    // ── Periodic ─────────────────────────────────────────────────────────────
-
+    //Periodic
     @Override
     public void periodic() {
         vision.updatePose();
