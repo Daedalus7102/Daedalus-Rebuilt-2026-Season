@@ -60,6 +60,7 @@ public class Constants {
 		public static final double hoodClosedLoopMinOutput = -0.4;
 		public static final double hoodClosedLoopMaxOutput = 0.4;
 		public static final double hoodReadyToleranceDeg = 1.0;
+		public static final double trenchAngle = 10;
 
 		public static final double shooterTargetRPM = 5000;
 		public static final double shooterReadyToleranceRPM = 200;
