@@ -12,8 +12,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IntakeConstants;
-import frc.robot.RobotContainer;
-import frc.robot.subsystems.led.LEDState;
 
 public class IntakeSubsystem extends SubsystemBase {
     // Pivot limits and presets (relative encoder rotations)
@@ -118,12 +116,10 @@ public class IntakeSubsystem extends SubsystemBase {
     // Roller control (simple set as requested)
     public void setRoller(double speed) {
         m_rollerMotor.set(speed);
-		RobotContainer.leds.set(LEDState.INTAKE);
     }
 
     public void stopRoller() {
         m_rollerMotor.stopMotor();
-		RobotContainer.leds.set(LEDState.OFF);
     }
 
     public void stop() {
