@@ -45,7 +45,8 @@ public class SwerveSubsystem extends SubsystemBase {
 	public enum DriveMode {
 		NORMAL,
 		AUTO_HUB,
-		AUTO_TEAM
+		AUTO_TEAM,
+		AUTO_TRENCH
 	}
 
 	private final DoubleSupplier joystickX, joystickY, joystickRotation;
@@ -62,7 +63,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
 	public SwerveSubsystem(DoubleSupplier joystickX, DoubleSupplier joystickY, DoubleSupplier joystickRotation, DoubleSupplier dPadX, DoubleSupplier dPadY) {
 		boolean blueAlliance = DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Blue;
-    	Pose2d startingPose = blueAlliance ? new Pose2d(new Translation2d(Meter.of(1), Meter.of(4)), Rotation2d.fromDegrees(0))
+    	Pose2d startingPose = !blueAlliance ? new Pose2d(new Translation2d(Meter.of(1), Meter.of(4)), Rotation2d.fromDegrees(0))
                                        : new Pose2d(new Translation2d(Meter.of(16), Meter.of(4)),Rotation2d.fromDegrees(180));
 		this.dPadX = dPadX;
 		this.dPadY = dPadY;
@@ -122,6 +123,10 @@ public class SwerveSubsystem extends SubsystemBase {
 				break;
 			case AUTO_TEAM:
 				driveAutoTeam(translation);
+				break;
+			case AUTO_TRENCH:
+				driveTargetAngle(translation, 0);
+				break;
 		}
 	}
 
@@ -224,7 +229,8 @@ public class SwerveSubsystem extends SubsystemBase {
 	}
 
 	public void addVisionMeasurement(EstimatedRobotPose pose, Matrix<N3, N1> deviation) {
-		swerveDrive.addVisionMeasurement(pose.estimatedPose.toPose2d(), pose.timestampSeconds, deviation);
+		if (driveMode == DriveMode.AUTO_HUB)
+			swerveDrive.addVisionMeasurement(pose.estimatedPose.toPose2d(), pose.timestampSeconds, deviation);
 	}
 
 	private void driveBotRelative(Translation2d translation, double rotation) {
@@ -256,7 +262,7 @@ public class SwerveSubsystem extends SubsystemBase {
 		ChassisSpeeds limited = new ChassisSpeeds(
 				target.vxMetersPerSecond,
 				target.vyMetersPerSecond,
-				Math.min(target.omegaRadiansPerSecond, Constants.SwerveConstants.maxTurnRate)
+				Math.min(Math.max(target.omegaRadiansPerSecond, -Constants.SwerveConstants.maxTurnRate), Constants.SwerveConstants.maxTurnRate)
 		);
 
 		swerveDrive.driveFieldOriented(limited);

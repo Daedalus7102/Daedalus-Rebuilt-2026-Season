@@ -16,12 +16,10 @@ import frc.robot.Constants.ShooterConstants;
 
 public class FeederSubsystem extends SubsystemBase {
 	private final SparkFlex indexerMotor;
-	private final SparkMax feederMotor1;
-	private final SparkFlex feederMotor2;
+	private final SparkMax feederMotor;
 
 	private final SparkFlexConfig indexerMotorConfig;
 	private final SparkMaxConfig feederMotor1Config;
-	private final SparkMaxConfig feederMotor2Config;
 
 	public FeederSubsystem() {
 		indexerMotor = new SparkFlex(Constants.ShooterConstants.indexerMotorID, SparkLowLevel.MotorType.kBrushless);
@@ -33,29 +31,19 @@ public class FeederSubsystem extends SubsystemBase {
 		.inverted(true);
 		indexerMotor.configure(indexerMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-		feederMotor1 = new SparkMax(Constants.ShooterConstants.feederMotor1ID, SparkLowLevel.MotorType.kBrushless);
+		feederMotor = new SparkMax(Constants.ShooterConstants.feederMotorID, SparkLowLevel.MotorType.kBrushless);
 		feederMotor1Config = new SparkMaxConfig();
 		feederMotor1Config
 		.idleMode(SparkBaseConfig.IdleMode.kCoast)
 		.smartCurrentLimit(35)
 		.voltageCompensation(12)
 		.inverted(false);
-		feederMotor1.configure(feederMotor1Config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-		feederMotor2 = new SparkFlex(Constants.ShooterConstants.feederMotor2ID, SparkLowLevel.MotorType.kBrushless);
-		feederMotor2Config = new SparkMaxConfig();
-		feederMotor2Config
-				.idleMode(SparkBaseConfig.IdleMode.kCoast)
-				.smartCurrentLimit(35)
-				.voltageCompensation(12)
-				.inverted(true);
-		feederMotor2.configure(feederMotor2Config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+		feederMotor.configure(feederMotor1Config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 	}
 
 	public void setSpeed(double speed) {
 		indexerMotor.set(0.8);
-		//feederMotor1.set(0.9);
-		//feederMotor2.set(0.3);
+		feederMotor.set(0.9);
 	}
 
 	public void enable() {
@@ -64,8 +52,7 @@ public class FeederSubsystem extends SubsystemBase {
 
 	public void disable() {
 		indexerMotor.stopMotor();
-		//feederMotor1.stopMotor();
-		//feederMotor2.stopMotor();
+		feederMotor.stopMotor();
 	}
 
 	public void unclog() {
@@ -74,7 +61,7 @@ public class FeederSubsystem extends SubsystemBase {
 
 	@Override
 	public void periodic() {
-		SmartDashboard.putNumber("FeederSpeed", feederMotor1.get());
+		SmartDashboard.putNumber("FeederSpeed", feederMotor.get());
 		SmartDashboard.putNumber("IndexerSpeed", indexerMotor.get());
 	}
 }

@@ -106,7 +106,22 @@ public class RobotContainer {
 		m_driverController.L2().whileTrue(new FeedSwerveCommand(m_swerveSubsystem, m_ShooterSubsystem));
                 
 		// For shooting (Hold to enable)
-		m_driverController.R2().whileTrue(new AimSwerveCommand(m_swerveSubsystem, m_ShooterSubsystem));
+		m_driverController.R2().onTrue(Commands.runOnce(() -> {
+                                m_swerveSubsystem.setMode(DriveMode.AUTO_HUB);
+                                m_ShooterSubsystem.aim(AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.swerveDrive.getPose()));
+                }, m_swerveSubsystem, m_ShooterSubsystem))
+				.onFalse(Commands.runOnce(() -> {
+					m_ShooterSubsystem.setHoodAngle(10);
+					m_swerveSubsystem.resetMode();
+				}, m_swerveSubsystem, m_ShooterSubsystem));
+
+		m_driverController.L1().onTrue(Commands.runOnce(() -> {
+					m_swerveSubsystem.setMode(DriveMode.AUTO_TRENCH);
+					m_intakeSubsystem.intakeOut();
+				}, m_swerveSubsystem))
+				.onFalse(Commands.runOnce(() -> {
+					m_swerveSubsystem.resetMode();
+				}, m_swerveSubsystem));
 
 
 		/* ---- Operator Controller ---- */
@@ -120,17 +135,21 @@ public class RobotContainer {
 
 		m_operatorController.L1()
 			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-0.8), m_intakeSubsystem))
-			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.intakeIn(), m_intakeSubsystem))
-			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
+			.toggleOnTrue(Commands.runOnce(() -> {
+                                m_intakeSubsystem.intakeIn();
+                        }, m_intakeSubsystem, m_swerveSubsystem))
+			.toggleOnFalse(Commands.runOnce(() -> {
+                                m_intakeSubsystem.stopPivot();
+                        }, m_intakeSubsystem, m_swerveSubsystem));
                         
 		// Operator L2: press once to start aim, press again to stop aim.
 		// m_operatorController.L1().toggleOnTrue(aimToggleCommand);
 
 		// Operator R1: shoot only while held.
-		m_operatorController.cross().whileTrue(new ActivateFeederCommand(m_FeederSubsystem, m_ShooterSubsystem, true));
-		m_operatorController.R2().whileTrue(
-				new SpoolShooterCommand(m_ShooterSubsystem, () -> AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.swerveDrive.getPose())));
-                m_operatorController.R2().onFalse(new InstantCommand(() -> m_ShooterSubsystem.disable()));
+		m_operatorController.cross().whileTrue(new ActivateFeederCommand(m_FeederSubsystem, m_ShooterSubsystem, false));
+		m_operatorController.R2()
+                                .whileTrue(new SpoolShooterCommand(m_ShooterSubsystem, () -> AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.swerveDrive.getPose())))
+                                .onFalse(Commands.runOnce(() -> m_ShooterSubsystem.disable(), m_ShooterSubsystem));
 	}
 
 	private void updateTowerDistanceDashboard() {

@@ -120,7 +120,6 @@ public class ShooterSubsystem extends SubsystemBase {
 		double safeDistance = Double.isFinite(distance) ? distance : 0.0;
 		LookUpTable.DataPoint point = LookUpTable.getPoint(safeDistance);
 		setHoodAngle(point.angle());
-		setShooterRPM(point.rpm());
 	}
 
 	public boolean isReadyToShoot() {
