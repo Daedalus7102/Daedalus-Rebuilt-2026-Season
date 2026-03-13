@@ -18,7 +18,6 @@ public class SpoolShooterCommand extends Command {
     
     @Override
     public void execute() {
-        shooter.aim(distance.getAsDouble());
         shooter.setMeasuredRPM(distance.getAsDouble());
     }
 

@@ -105,7 +105,7 @@ public class RobotContainer {
 		m_driverController.L2().whileTrue(new FeedSwerveCommand(m_swerveSubsystem, m_ShooterSubsystem));
                 
 		// For shooting (Hold to enable)
-		m_driverController.R2().whileTrue(new AimSwerveCommand(m_swerveSubsystem));
+		m_driverController.R2().whileTrue(new AimSwerveCommand(m_swerveSubsystem, m_ShooterSubsystem));
 
 
 		/* ---- Operator Controller ---- */
