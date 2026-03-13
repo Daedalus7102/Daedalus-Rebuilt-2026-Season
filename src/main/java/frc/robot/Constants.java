@@ -143,8 +143,8 @@ public class Constants {
         public static final double unclogRPM = -4000;
 
         // Feeder & Indexer
-        public static final double feederSpeed = 0.2;
-        public static final double indexerSpeed = 0.8;
+        public static final double feederSpeed = 1.0;
+        public static final double indexerSpeed = 1.0;
 
 		public static final double feedingShooterRPM = shooterTargetRPM;
         public static final double feedingHoodAngle = 0;

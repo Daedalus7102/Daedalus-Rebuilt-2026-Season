@@ -130,6 +130,16 @@ public class SwerveDrive {
             new SwerveModuleState(0.0, Rotation2d.fromDegrees(45))
     };
 
+    /**
+     * Heading used for driver/auton control transforms and aim loops.
+     *
+     * <p>This comes from the pose estimator (gyro + vision), which gives behavior
+     * equivalent to "gyro corrected by vision" for field-relative control.
+     */
+    private Rotation2d getControlHeading() {
+        return m_poseEstimator.getEstimatedPosition().getRotation();
+    }
+
     // Constructor
     public SwerveDrive(Subsystem requirements) {
         m_requirements = requirements;
@@ -216,6 +226,7 @@ public class SwerveDrive {
         }
 
         SmartDashboard.putNumber("Gyro (deg)", m_cachedRotation.getDegrees());
+        SmartDashboard.putNumber("FusedHeading (deg)", getControlHeading().getDegrees());
         SmartDashboard.putBoolean("DriverJoystick", isJoystickInputPresent());
         SmartDashboard.putBoolean("DriverDPad", isDPadInputPresent());
 
@@ -223,7 +234,7 @@ public class SwerveDrive {
         SmartDashboard.putBoolean("AimEnabled", m_useFixedOmega);
         SmartDashboard.putString("AimMode", m_aimMode.name());
         SmartDashboard.putNumber("AimTargetHeadingDeg", desiredHeading.getDegrees());
-        SmartDashboard.putNumber("AimErrorDeg", desiredHeading.minus(m_cachedRotation).getDegrees());
+        SmartDashboard.putNumber("AimErrorDeg", desiredHeading.minus(getControlHeading()).getDegrees());
         SmartDashboard.putNumber("AimOmegaCmd", m_lastAimOmega);
 
         // SmartDashboard.putNumber("Swerve/FL/TargetVelMps", m_swerveModule1.getTargetVelocityMetersPerSecond());
@@ -363,7 +374,7 @@ public class SwerveDrive {
     private ChassisSpeeds drive(double x, double y, double omega, boolean fieldRelative, double periodSeconds) {
         m_chassisSpeeds = ChassisSpeeds.discretize(
                 fieldRelative
-                        ? ChassisSpeeds.fromFieldRelativeSpeeds(x, y, omega, m_cachedRotation)
+                        ? ChassisSpeeds.fromFieldRelativeSpeeds(x, y, omega, getControlHeading())
                         : new ChassisSpeeds(x, y, omega),
                 periodSeconds);
         return m_chassisSpeeds;
@@ -429,6 +440,24 @@ public class SwerveDrive {
         m_lastAimOmega = 0.0;
     }
 
+    /**
+     * Re-syncs estimator heading to the current gyro heading while preserving field translation.
+     *
+     * <p>Useful after autonomous when odometry heading may be reset by the auto path, causing
+     * field-relative teleop translation to feel inverted.
+     */
+    public void syncEstimatorHeadingToGyro() {
+        m_cachedRotation = m_gyro.getRotation2d();
+        Pose2d currentPose = m_poseEstimator.getEstimatedPosition();
+        readSwerveModulePositions();
+        m_poseEstimator.resetPosition(
+                m_cachedRotation,
+                m_cachedPositions,
+                new Pose2d(currentPose.getTranslation(), m_cachedRotation));
+        m_headingController.reset();
+        m_lastAimOmega = 0.0;
+    }
+
     public void addVisionMeasurement(Pose2d visionPose, double timestampSeconds) {
         addVisionMeasurement(visionPose, timestampSeconds, m_visionStdDevs);
     }
@@ -480,7 +509,7 @@ public class SwerveDrive {
         m_useFixedOmega = useFixedOmega;
         if (useFixedOmega) {
             if (m_aimMode == AimMode.OFF) {
-                m_targetFieldHeading = m_cachedRotation;
+                m_targetFieldHeading = getControlHeading();
                 m_aimMode = AimMode.FIELD_HEADING;
             }
         } else {
@@ -510,7 +539,7 @@ public class SwerveDrive {
     public void driveFacingAngle(Rotation2d targetHeading) {
         final Rotation2d targetFieldHeading = m_fieldRelativeTeleop
                 ? targetHeading
-                : m_cachedRotation.plus(targetHeading);
+                : getControlHeading().plus(targetHeading);
 
         aimAtFieldHeading(targetFieldHeading);
     }
@@ -543,14 +572,14 @@ public class SwerveDrive {
     }
 
     private double calculateHeadingOmega(Rotation2d targetFieldHeading) {
-        return m_headingController.calculate(m_cachedRotation.getRadians(), targetFieldHeading.getRadians());
+        return m_headingController.calculate(getControlHeading().getRadians(), targetFieldHeading.getRadians());
     }
 
     private Rotation2d getDesiredFieldHeading() {
         return switch (m_aimMode) {
             case FIELD_HEADING -> m_targetFieldHeading;
             case FIELD_POINT -> calculateTargetFieldHeading(m_targetFieldPoint);
-            case OFF -> m_cachedRotation;
+            case OFF -> getControlHeading();
         };
     }
 
@@ -566,7 +595,7 @@ public class SwerveDrive {
     private Rotation2d calculateTargetFieldHeading(Translation2d targetPoint) {
         Translation2d delta = targetPoint.minus(getPose().getTranslation());
         if (delta.getNorm() <= 1e-4) {
-            return m_cachedRotation;
+            return getControlHeading();
         }
         return new Rotation2d(Math.atan2(delta.getY(), delta.getX()));
     }

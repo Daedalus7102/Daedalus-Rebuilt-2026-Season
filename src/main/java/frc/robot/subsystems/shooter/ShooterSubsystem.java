@@ -125,7 +125,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
 	public boolean isReadyToShoot() {
 		double targetRPM = Math.max(0.0, getTargetRPM());
-		double thresholdRPM = Math.max(0.0, targetRPM*0.95);
+		double thresholdRPM = Math.max(0.0, targetRPM*0.945);
 		return targetRPM > 0.0 && getShooterRPM() >= thresholdRPM;
 	}
 

@@ -27,7 +27,8 @@ public class RobotContainer {
 		NONE,
 		L1,
 		L2,
-		R1
+		R1,
+		R2
 	}
 
 	// Controllers
@@ -41,7 +42,6 @@ public class RobotContainer {
 	private final FeederSubsystem m_FeederSubsystem = new FeederSubsystem();
 
 	// Example field point to aim at
-	private static final Translation2d kLookAtPoint = new Translation2d(8.27, 4.10);
 	private static final double kReducedDriveScale = 0.30;
 	private AimOverrideButton m_activeAimOverrideButton = AimOverrideButton.NONE;
 
@@ -52,10 +52,34 @@ public class RobotContainer {
 		NamedCommands.registerCommand("nothing", Commands.sequence(
 		));
 		// Autonomous event markers: explicit field-based aiming helpers.
-		NamedCommands.registerCommand("AimSpeakerOn", m_swerveSubsystem.enableAutoAimAtPoint(kLookAtPoint));
-		NamedCommands.registerCommand("AimSpeakerOff", m_swerveSubsystem.disableAutoAim());
-		NamedCommands.registerCommand("AimForwardOn", m_swerveSubsystem.enableAutoAimAtAngle(Rotation2d.fromDegrees(0.0)));
-		NamedCommands.registerCommand("AimForwardOff", m_swerveSubsystem.disableAutoAim());
+		NamedCommands.registerCommand("AimAndShoot", Commands.sequence(
+				m_swerveSubsystem.enableAutoAimAtPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance()),
+				Commands.run(
+						() -> {
+							m_ShooterSubsystem.aim(AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.getPose()));
+
+							if (m_ShooterSubsystem.isReadyToShoot()) {
+								m_FeederSubsystem.enable();
+								m_intakeSubsystem.setPivotManual(-0.3);
+								m_intakeSubsystem.setRoller(0.2);
+							} else {
+								m_FeederSubsystem.disable();
+								m_intakeSubsystem.stopPivot();
+								m_intakeSubsystem.stopRoller();
+							}
+						},
+						m_ShooterSubsystem,
+						m_FeederSubsystem,
+						m_intakeSubsystem
+				).withTimeout(9.0)
+		).finallyDo((_interrupted) -> {
+			m_FeederSubsystem.disable();
+			m_intakeSubsystem.stopPivot();
+			m_intakeSubsystem.stopRoller();
+			m_ShooterSubsystem.disable();
+			m_swerveSubsystem.disableAutoAimNow();
+		}));
+
 
 		m_swerveSubsystem.setReducedVelocityScale(kReducedDriveScale);
 		
@@ -79,14 +103,36 @@ public class RobotContainer {
 
 		Command shootToggleCommand = Commands.runEnd(
 				() -> {
+
 					if (m_ShooterSubsystem.isReadyToShoot()) {
 						m_FeederSubsystem.enable();
+						m_intakeSubsystem.setPivotManual(-0.3);
+						m_intakeSubsystem.setRoller(0.2);
 					} else {
 						m_FeederSubsystem.disable();
+						m_intakeSubsystem.stopPivot();
+						m_intakeSubsystem.stopRoller();
 					}
 				},
-				m_FeederSubsystem::disable,
-				m_FeederSubsystem
+				() -> {
+					m_FeederSubsystem.disable();
+					m_intakeSubsystem.stopPivot();
+					m_intakeSubsystem.stopRoller();
+				},
+				m_FeederSubsystem,
+				m_intakeSubsystem
+		);
+
+		Command aimFieldToggleCommand = Commands.startEnd(
+				() -> {
+					m_ShooterSubsystem.setHoodAngle(20.0);
+					m_ShooterSubsystem.setShooterRPM(3200);
+				},
+				() -> {
+					m_ShooterSubsystem.disable();
+					m_FeederSubsystem.disable();
+				},
+				m_ShooterSubsystem
 		);
 
 		Command testAimToggleCommand = Commands.startEnd(
@@ -119,6 +165,7 @@ public class RobotContainer {
 		m_driverController.L1().onTrue(Commands.runOnce(() -> {
 			setAimOverride(AimOverrideButton.L1);
 			m_intakeSubsystem.intakeOut();
+			m_ShooterSubsystem.setHoodAngle(10.0);
 		}, m_swerveSubsystem, m_intakeSubsystem));
 		m_driverController.L1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
 
@@ -128,6 +175,7 @@ public class RobotContainer {
 		m_driverController.L2().onTrue(Commands.runOnce(() -> {
 			setAimOverride(AimOverrideButton.L2);
 			m_intakeSubsystem.intakeOut();
+			m_ShooterSubsystem.setHoodAngle(10.0);
 		}, m_swerveSubsystem, m_intakeSubsystem));
 		m_driverController.L2().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
 
@@ -142,6 +190,17 @@ public class RobotContainer {
 			}
 		}, m_swerveSubsystem));
 		m_driverController.R1().toggleOnTrue(aimToggleCommand);
+
+		m_driverController.R2().onTrue(Commands.runOnce(() -> {
+			if (m_activeAimOverrideButton == AimOverrideButton.R2) {
+				m_swerveSubsystem.setUseReducedVelocity(false);
+				clearAimOverride(AimOverrideButton.R2);
+			} else {
+				m_swerveSubsystem.setUseReducedVelocity(true);
+				setAimOverride(AimOverrideButton.R2);
+			}
+		}, m_swerveSubsystem));
+		m_driverController.R2().toggleOnTrue(aimFieldToggleCommand);
 
 
 		// Operator Controller
@@ -191,6 +250,7 @@ public class RobotContainer {
 				m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(180.0));
 			}
 			case R1 -> m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance());
+			case R2 -> m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getClosestAllianceZoneTranslation(m_swerveSubsystem.getPose()));
 			case NONE -> {
 				m_swerveSubsystem.setUseFixedOmega(false);
 				m_swerveSubsystem.setUseReducedVelocity(false);
@@ -221,6 +281,9 @@ public class RobotContainer {
 		if (m_activeAimOverrideButton == AimOverrideButton.R1) {
 			// Keep refreshing tower target so heading keeps updating with robot pose.
 			m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance());
+		} else if (m_activeAimOverrideButton == AimOverrideButton.R2) {
+			// Keep refreshing closest alliance-zone target as robot pose changes.
+			m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getClosestAllianceZoneTranslation(m_swerveSubsystem.getPose()));
 		}
 	}
 
@@ -252,6 +315,7 @@ public class RobotContainer {
 
 	public void onTeleopInit() {
 		m_swerveSubsystem.disableAutoAimNow();
+		m_swerveSubsystem.syncEstimatorHeadingToGyro();
 		m_swerveSubsystem.setUseReducedVelocity(false);
 		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.IDLE));
 	}
