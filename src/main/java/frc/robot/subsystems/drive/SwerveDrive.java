@@ -116,11 +116,17 @@ public class SwerveDrive {
     private Matrix<N3, N1> m_visionStdDevs = VecBuilder.fill(0.7, 0.7, Math.toRadians(10.0));
     private double m_lastVisionTimestampSeconds = -1.0;
     private int m_visionAcceptedCount = 0;
+    private double m_lastVisionGyroSyncTimeSeconds = -1.0;
+    private boolean m_lastVisionGyroSyncApplied = false;
+    private double m_lastVisionGyroSyncErrorDeg = 0.0;
     private double m_lastFieldPublishTimeSeconds = 0.0;
     private double m_lastDashboardPublishTimeSeconds = 0.0;
 
     private static final double kLoopPeriodSeconds = 0.02;
     private static final double kDPadDriveScale = 0.3;
+    private static final double kVisionGyroSyncPeriodSeconds = 0.20;
+    private static final double kVisionGyroSyncMaxErrorDeg = 12.0;
+    private static final double kVisionGyroSyncMaxThetaStdDevRad = Math.toRadians(35.0);
     private static final double kFieldPublishPeriodSeconds = 0.05;
     private static final double kDashboardPublishPeriodSeconds = 0.1;
     private static final SwerveModuleState[] kLockedStates = {
@@ -133,24 +139,20 @@ public class SwerveDrive {
     /**
      * Heading used for driver/auton control transforms and aim loops.
      *
-     * <p>This comes from the pose estimator (gyro + vision), which gives behavior
-     * equivalent to "gyro corrected by vision" for field-relative control.
+     * <p>This comes from the pose estimator and can be corrected by vision (x/y/theta).
      */
     private Rotation2d getControlHeading() {
         return m_poseEstimator.getEstimatedPosition().getRotation();
     }
 
     /**
-     * Heading reference used ONLY for teleop field-relative translation.
+     * Heading reference used for teleop field-relative translation.
      *
-     * <p>On red alliance we rotate driver translation frame by 180 deg so stick
-     * directions feel the same from the driver's station perspective.
+     * <p>Uses estimator/gyro heading directly (no alliance-based 180 deg offset),
+     * preventing red-alliance teleop controls from being inverted.
      */
     private Rotation2d getTeleopFieldRelativeHeading() {
-        Rotation2d heading = getControlHeading();
-        boolean isRedAlliance = DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue)
-                == DriverStation.Alliance.Red;
-        return isRedAlliance ? heading.plus(Rotation2d.fromDegrees(180.0)) : heading;
+        return getControlHeading();
     }
 
     // Constructor
@@ -176,7 +178,7 @@ public class SwerveDrive {
             RobotConfig config = RobotConfig.fromGUISettings();
             AutoBuilder.configure(
                     this::getPose,
-                    this::resetPose,
+                    this::resetPoseFromAuto,
                     this::getSpeeds,
                     this::driveRobotRelative,
                     new PPHolonomicDriveController(
@@ -273,6 +275,8 @@ public class SwerveDrive {
 
         SmartDashboard.putNumber("VisionLastTimestamp", m_lastVisionTimestampSeconds);
         SmartDashboard.putNumber("VisionAcceptedCount", m_visionAcceptedCount);
+        SmartDashboard.putBoolean("VisionGyroSyncApplied", m_lastVisionGyroSyncApplied);
+        SmartDashboard.putNumber("VisionGyroSyncErrorDeg", m_lastVisionGyroSyncErrorDeg);
     }
 
     // ======================
@@ -440,6 +444,19 @@ public class SwerveDrive {
         m_poseEstimator.resetPosition(m_cachedRotation, m_cachedPositions, pose);
     }
 
+    /**
+     * AutoBuilder pose reset hook.
+     *
+     * <p>Preserves live gyro heading so autonomous start pose resets don't overwrite
+     * heading reference used by drive/aim control loops.
+     */
+    private void resetPoseFromAuto(Pose2d pose) {
+        m_cachedRotation = m_gyro.getRotation2d();
+        readSwerveModulePositions();
+        Pose2d translationOnlyPose = new Pose2d(pose.getTranslation(), m_cachedRotation);
+        m_poseEstimator.resetPosition(m_cachedRotation, m_cachedPositions, translationOnlyPose);
+    }
+
     /** Zeroes yaw while preserving current field translation in the pose estimator. */
     public void zeroGyro() {
         m_gyro.reset();
@@ -483,6 +500,46 @@ public class SwerveDrive {
         m_poseEstimator.addVisionMeasurement(visionPose, timestampSeconds, visionStdDevs);
         m_lastVisionTimestampSeconds = timestampSeconds;
         m_visionAcceptedCount++;
+        maybeSyncGyroToEstimatedHeading(visionStdDevs);
+    }
+
+    /**
+     * Optionally writes fused estimator heading back into gyro yaw at a limited rate
+     * when vision heading confidence is acceptable.
+     */
+    private void maybeSyncGyroToEstimatedHeading(Matrix<N3, N1> visionStdDevs) {
+        m_lastVisionGyroSyncApplied = false;
+
+        if (visionStdDevs.get(2, 0) > kVisionGyroSyncMaxThetaStdDevRad) {
+            return;
+        }
+
+        double nowSeconds = Timer.getFPGATimestamp();
+        if (nowSeconds - m_lastVisionGyroSyncTimeSeconds < kVisionGyroSyncPeriodSeconds) {
+            return;
+        }
+
+        Rotation2d estimatedHeading = m_poseEstimator.getEstimatedPosition().getRotation();
+        Rotation2d gyroHeading = m_gyro.getRotation2d();
+        double errorDeg = estimatedHeading.minus(gyroHeading).getDegrees();
+        m_lastVisionGyroSyncErrorDeg = errorDeg;
+
+        if (Math.abs(errorDeg) > kVisionGyroSyncMaxErrorDeg) {
+            return;
+        }
+
+        m_gyro.setYaw(estimatedHeading.getDegrees());
+        m_cachedRotation = m_gyro.getRotation2d();
+
+        Pose2d currentPose = m_poseEstimator.getEstimatedPosition();
+        readSwerveModulePositions();
+        m_poseEstimator.resetPosition(
+                m_cachedRotation,
+                m_cachedPositions,
+                new Pose2d(currentPose.getTranslation(), m_cachedRotation));
+
+        m_lastVisionGyroSyncTimeSeconds = nowSeconds;
+        m_lastVisionGyroSyncApplied = true;
     }
 
     public void setVisionMeasurementStdDevs(Matrix<N3, N1> visionStdDevs) {

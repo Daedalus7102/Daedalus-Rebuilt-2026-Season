@@ -71,7 +71,7 @@ public class RobotContainer {
 						m_ShooterSubsystem,
 						m_FeederSubsystem,
 						m_intakeSubsystem
-				).withTimeout(9.0)
+				).withTimeout(15.0)
 		).finallyDo((_interrupted) -> {
 			m_FeederSubsystem.disable();
 			m_intakeSubsystem.stopPivot();
