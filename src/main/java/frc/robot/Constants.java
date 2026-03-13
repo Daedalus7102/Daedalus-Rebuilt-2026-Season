@@ -121,7 +121,7 @@ public class Constants {
 
 		// Shooter closed-loop (Spark velocity control in RPM)
 		// 1:1
-		public static final double shooterP = 0.0025;
+		public static final double shooterP = 0.0028;
 		public static final double shooterI = 0.0;
 		public static final double shooterD = 0.002;
 		public static final double shooterKV = 0.0004;
@@ -143,7 +143,7 @@ public class Constants {
         public static final double unclogRPM = -4000;
 
         // Feeder & Indexer
-        public static final double feederSpeed = 0.0;
+        public static final double feederSpeed = 1.0;
         public static final double indexerSpeed = 1.0;
 
 		public static final double feedingShooterRPM = shooterTargetRPM;
