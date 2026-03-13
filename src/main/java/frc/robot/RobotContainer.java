@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.commands.drive.AimSwerveCommand;
 import frc.robot.commands.drive.FeedSwerveCommand;
@@ -126,9 +127,10 @@ public class RobotContainer {
 		// m_operatorController.L1().toggleOnTrue(aimToggleCommand);
 
 		// Operator R1: shoot only while held.
-		m_operatorController.cross().whileTrue(new ActivateFeederCommand(m_FeederSubsystem, m_ShooterSubsystem, false));
+		m_operatorController.cross().whileTrue(new ActivateFeederCommand(m_FeederSubsystem, m_ShooterSubsystem, true));
 		m_operatorController.R2().whileTrue(
 				new SpoolShooterCommand(m_ShooterSubsystem, () -> AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.swerveDrive.getPose())));
+                m_operatorController.R2().onFalse(new InstantCommand(() -> m_ShooterSubsystem.disable()));
 	}
 
 	private void updateTowerDistanceDashboard() {

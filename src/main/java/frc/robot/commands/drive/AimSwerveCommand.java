@@ -13,13 +13,13 @@ public class AimSwerveCommand extends Command {
     public AimSwerveCommand(SwerveSubsystem swerveSubsystem, ShooterSubsystem shooterSubsystem) {
         this.swerveSubsystem = swerveSubsystem;
         this.shooterSubsystem = shooterSubsystem;
+        addRequirements(swerveSubsystem);
     }
 
     @Override
-    public void initialize() {
+    public void execute() {
         swerveSubsystem.setMode(DriveMode.AUTO_HUB);
         shooterSubsystem.aim(AllianceTargetPoses.getDistanceToTower(swerveSubsystem.swerveDrive.getPose()));
-        addRequirements(swerveSubsystem);
     }
 
     @Override

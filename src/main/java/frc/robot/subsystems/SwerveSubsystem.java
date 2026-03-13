@@ -17,12 +17,18 @@ import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.camera.Vision;
+import frc.robot.tools.AllianceTargetPoses;
+
 import org.photonvision.EstimatedRobotPose;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
+
+import static edu.wpi.first.units.Units.Meter;
+
 import java.io.File;
 import java.util.List;
 import java.util.function.DoubleSupplier;
@@ -55,11 +61,14 @@ public class SwerveSubsystem extends SubsystemBase {
 	public final SwerveDrive swerveDrive;
 
 	public SwerveSubsystem(DoubleSupplier joystickX, DoubleSupplier joystickY, DoubleSupplier joystickRotation, DoubleSupplier dPadX, DoubleSupplier dPadY) {
+		boolean blueAlliance = DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Blue;
+    	Pose2d startingPose = blueAlliance ? new Pose2d(new Translation2d(Meter.of(1), Meter.of(4)), Rotation2d.fromDegrees(0))
+                                       : new Pose2d(new Translation2d(Meter.of(16), Meter.of(4)),Rotation2d.fromDegrees(180));
 		this.dPadX = dPadX;
 		this.dPadY = dPadY;
 		try {
 			File configDir = new File(Filesystem.getDeployDirectory(), "swerve");
-			swerveDrive = new SwerveParser(configDir).createSwerveDrive(Constants.SwerveConstants.maxSpeed);
+			swerveDrive = new SwerveParser(configDir).createSwerveDrive(Constants.SwerveConstants.maxSpeed, startingPose);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -161,6 +170,10 @@ public class SwerveSubsystem extends SubsystemBase {
 				MathUtil.applyDeadband(-joystickX.getAsDouble(), 0.1)
 		);
 
+		if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Red) {
+			translation = translation.rotateBy(Rotation2d.k180deg);
+		}
+
 		return translation.times(getScaleInputValue() * Constants.SwerveConstants.maxSpeed);
 	}
 
@@ -223,11 +236,8 @@ public class SwerveSubsystem extends SubsystemBase {
 	}
 
 	private void driveAutoHub(Translation2d translation) {
-		Translation2d compensatedPos = new Translation2d( // todo adjust depending on robot velocity or something
-				hubPos.getX(),
-				hubPos.getY()
-		);
-		driveTargetAngle(translation.times(AUTO_HUB_INPUT_SCALE), getRotationToPoint(compensatedPos));
+		Pose2d pos = AllianceTargetPoses.getTowerPoseForCurrentAlliance();
+		driveTargetAngle(translation.times(AUTO_HUB_INPUT_SCALE), getRotationToPoint(pos.getTranslation()));
 	}
 
 	private double getRotationToPoint(Translation2d target) {

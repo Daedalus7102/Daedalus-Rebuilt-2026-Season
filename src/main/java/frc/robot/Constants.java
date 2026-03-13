@@ -17,7 +17,7 @@ public class Constants {
     // Drive Constants
     public static class SwerveConstants {
         public static final double maxSpeed = 2; // Maximum drive speed in meters per second
-		public static final double maxTurnRate = 2; // max turn rate in radians per second
+		public static final double maxTurnRate = 2.5; // max turn rate in radians per second
 	}
 
 	public static class IntakeConstants {

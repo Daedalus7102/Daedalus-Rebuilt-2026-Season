@@ -53,9 +53,9 @@ public class FeederSubsystem extends SubsystemBase {
 	}
 
 	public void setSpeed(double speed) {
-		indexerMotor.set(speed);
-		feederMotor1.set(speed);
-		feederMotor2.set(speed);
+		indexerMotor.set(0.8);
+		//feederMotor1.set(0.9);
+		//feederMotor2.set(0.3);
 	}
 
 	public void enable() {
@@ -64,7 +64,8 @@ public class FeederSubsystem extends SubsystemBase {
 
 	public void disable() {
 		indexerMotor.stopMotor();
-		feederMotor1.stopMotor();
+		//feederMotor1.stopMotor();
+		//feederMotor2.stopMotor();
 	}
 
 	public void unclog() {
