@@ -18,6 +18,8 @@ import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.camera.Vision;
@@ -167,6 +169,35 @@ public class SwerveSubsystem extends SubsystemBase {
 				new TrajectoryConfig(2.0, 2.0));
 
 		swerveDrive.field.getObject(objectName).setTrajectory(trajectory);
+	}
+
+	/**
+	 * Convenience wrapper around swerveDrive.getPose().
+	 */
+	public Pose2d getPose() {
+		return swerveDrive.getPose();
+	}
+
+	/**
+	 * Aims the swerve at the given field point and switches to AUTO_HUB mode.
+	 * Returns an instant Command so it can be used as the first step in a sequence.
+	 *
+	 * @param target the field {@link Translation2d} to aim at.
+	 * @return an instant {@link Command} that sets hub position and activates AUTO_HUB mode.
+	 */
+	public Command enableAutoAimAtPoint(Translation2d target) {
+		return Commands.runOnce(() -> {
+			setHubPos(target);
+			setMode(DriveMode.AUTO_HUB);
+		}, this);
+	}
+
+	/**
+	 * Immediately returns the swerve to {@link DriveMode#NORMAL}.
+	 * Intended for use in finallyDo() blocks.
+	 */
+	public void disableAutoAimNow() {
+		resetMode();
 	}
 
 	private Translation2d getControllerTranslation() {

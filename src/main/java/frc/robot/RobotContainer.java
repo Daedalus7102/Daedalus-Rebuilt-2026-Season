@@ -67,12 +67,41 @@ public class RobotContainer {
 			Commands.runOnce(m_intakeSubsystem::stopRoller, m_intakeSubsystem));
 		NamedCommands.registerCommand("RetractIntake",
 			Commands.runOnce(m_intakeSubsystem::intakeIn, m_intakeSubsystem));
+		
+			
 
 		// Autonomous event markers: explicit field-based aiming helpers.
 		NamedCommands.registerCommand("AimHubOn", Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_HUB), m_swerveSubsystem));
 		NamedCommands.registerCommand("AimHubOff", Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
 		NamedCommands.registerCommand("AimTeamOn", Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_TEAM), m_swerveSubsystem));
 		NamedCommands.registerCommand("AimTeamOff", Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
+
+		NamedCommands.registerCommand("AimAndShoot", Commands.sequence(
+			m_swerveSubsystem.enableAutoAimAtPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance()),
+			Commands.run(
+				() -> {
+					m_ShooterSubsystem.aim(AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.getPose()));
+					if (m_ShooterSubsystem.isReadyToShoot()) {
+						m_FeederSubsystem.enable();
+						m_intakeSubsystem.setPivotManual(-0.3);
+						m_intakeSubsystem.setRoller(0.2);
+					} else {
+						m_FeederSubsystem.disable();
+						m_intakeSubsystem.stopPivot();
+						m_intakeSubsystem.stopRoller();
+					}
+				},
+				m_ShooterSubsystem,
+				m_FeederSubsystem,
+				m_intakeSubsystem
+			).withTimeout(15.0)
+		).finallyDo((_interrupted) -> {
+			m_FeederSubsystem.disable();
+			m_intakeSubsystem.stopPivot();
+			m_intakeSubsystem.stopRoller();
+			m_ShooterSubsystem.disable();
+			m_swerveSubsystem.disableAutoAimNow();
+		}));
 
 		configureBindings();
 		m_swerveSubsystem.setHubPos(kLookAtPoint);
