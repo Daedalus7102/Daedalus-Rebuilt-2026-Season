@@ -20,10 +20,10 @@ public final class AllianceTargetPoses {
     private static final Translation2d kRedTower = new Translation2d(11.911, 4.029);
 
     // TODO: Tune these placeholder coordinates.
-    private static final Translation2d kBlueAllianceZoneLeft = new Translation2d(3.00, 5.50);
-    private static final Translation2d kBlueAllianceZoneRight = new Translation2d(3.00, 2.50);
-    private static final Translation2d kRedAllianceZoneLeft = new Translation2d(14.50, 2.50);
-    private static final Translation2d kRedAllianceZoneRight = new Translation2d(14.50, 5.50);
+    private static final Translation2d kBlueAllianceZoneLeft = new Translation2d(2.5, 6.3);
+    private static final Translation2d kBlueAllianceZoneRight = new Translation2d(2.5, 1.9);
+    private static final Translation2d kRedAllianceZoneLeft = new Translation2d(14.0, 1.9);
+    private static final Translation2d kRedAllianceZoneRight = new Translation2d(14.0, 6.3);
 
     public static boolean isCurrentAllianceRed() {
         return DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue) == DriverStation.Alliance.Red;

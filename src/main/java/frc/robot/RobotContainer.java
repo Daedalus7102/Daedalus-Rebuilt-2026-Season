@@ -5,99 +5,87 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.path.PathPlannerPath;
-import edu.wpi.first.wpilibj.DriverStation;
 import com.pathplanner.lib.auto.NamedCommands;
+
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
-import frc.robot.Constants.ShooterConstants;
-import frc.robot.subsystems.SwerveSubsystem;
-import frc.robot.subsystems.SwerveSubsystem.DriveMode;
+import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
+import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
-import frc.robot.subsystems.led.LEDController;
-import frc.robot.subsystems.led.LEDState;
 import frc.robot.subsystems.shooter.FeederSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.tools.AllianceTargetPoses;
 
 public class RobotContainer {
+	private enum AimOverrideButton {
+		NONE,
+		L1,
+		L2,
+		R1,
+		R2
+	}
 
 	// Controllers
 	public static final CommandPS5Controller m_driverController = new CommandPS5Controller(0);
 	public static final CommandPS5Controller m_operatorController = new CommandPS5Controller(1);
 
 	// Subsystems
-	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem(
-			() -> m_driverController.getHID().getLeftX(),
-			() -> m_driverController.getHID().getLeftY(),
-			() -> m_driverController.getHID().getRightX(),
-			() -> dPadXFromPov(m_driverController.getHID().getPOV()),
-			() -> dPadYFromPov(m_driverController.getHID().getPOV())
-	);
+	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
 	private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
 	private final ShooterSubsystem m_ShooterSubsystem = new ShooterSubsystem();
 	private final FeederSubsystem m_FeederSubsystem = new FeederSubsystem();
 
-	public static final LEDController leds = new LEDController();
-
 	// Example field point to aim at
-	private static final Translation2d kLookAtPoint = new Translation2d(4.62, 4.03);
-	private static final double kReducedDriveScale = 0.50;
+	private static final double kReducedDriveScale = 0.30;
+	private AimOverrideButton m_activeAimOverrideButton = AimOverrideButton.NONE;
 
 	// Autonomous
 	private SendableChooser<Command> m_autoChooser;
 
 	public RobotContainer() {
-		NamedCommands.registerCommand("nothing", Commands.none());
-
-		// Intake
-		NamedCommands.registerCommand("DeployIntake",
-			Commands.runOnce(m_intakeSubsystem::intakeOut, m_intakeSubsystem));
-		NamedCommands.registerCommand("StartRollers",
-			Commands.runOnce(() -> m_intakeSubsystem.setRoller(1.0), m_intakeSubsystem));
-		NamedCommands.registerCommand("StopRollers",
-			Commands.runOnce(m_intakeSubsystem::stopRoller, m_intakeSubsystem));
-		NamedCommands.registerCommand("RetractIntake",
-			Commands.runOnce(m_intakeSubsystem::intakeIn, m_intakeSubsystem));
-
-		// Shooter
-		NamedCommands.registerCommand("SpinUpShooter",
-			Commands.runOnce(
-				() -> m_ShooterSubsystem.setShooterRPM(ShooterConstants.shooterTargetRPM),
-				m_ShooterSubsystem));
-
-		NamedCommands.registerCommand("AimAndShoot", Commands.sequence(
-			Commands.runOnce(
-				() -> m_ShooterSubsystem.setHoodAngle(ShooterConstants.feedingHoodAngle),
-				m_ShooterSubsystem),
-			Commands.waitUntil(m_ShooterSubsystem::isReadyToShoot),
-			Commands.runOnce(m_FeederSubsystem::enable, m_FeederSubsystem),
-			Commands.waitSeconds(0.5),
-			Commands.runOnce(() -> {
-				m_FeederSubsystem.disable();
-				m_ShooterSubsystem.disable();
-			}, m_ShooterSubsystem, m_FeederSubsystem)
+		NamedCommands.registerCommand("nothing", Commands.sequence(
 		));
-
 		// Autonomous event markers: explicit field-based aiming helpers.
-		NamedCommands.registerCommand("AimHubOn", Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_HUB), m_swerveSubsystem));
-		NamedCommands.registerCommand("AimHubOff", Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
-		NamedCommands.registerCommand("AimTeamOn", Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_TEAM), m_swerveSubsystem));
-		NamedCommands.registerCommand("AimTeamOff", Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
+		NamedCommands.registerCommand("AimAndShoot", Commands.sequence(
+				m_swerveSubsystem.enableAutoAimAtPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance()),
+				Commands.run(
+						() -> {
+							m_ShooterSubsystem.aim(AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.getPose()));
 
+							if (m_ShooterSubsystem.isReadyToShoot()) {
+								m_FeederSubsystem.enable();
+								m_intakeSubsystem.setPivotManual(-0.3);
+								m_intakeSubsystem.setRoller(0.2);
+							} else {
+								m_FeederSubsystem.disable();
+								m_intakeSubsystem.stopPivot();
+								m_intakeSubsystem.stopRoller();
+							}
+						},
+						m_ShooterSubsystem,
+						m_FeederSubsystem,
+						m_intakeSubsystem
+				).withTimeout(9.0)
+		).finallyDo((_interrupted) -> {
+			m_FeederSubsystem.disable();
+			m_intakeSubsystem.stopPivot();
+			m_intakeSubsystem.stopRoller();
+			m_ShooterSubsystem.disable();
+			m_swerveSubsystem.disableAutoAimNow();
+		}));
+
+
+		m_swerveSubsystem.setReducedVelocityScale(kReducedDriveScale);
+		
 		configureBindings();
-		m_swerveSubsystem.setHubPos(kLookAtPoint);
 
 		m_autoChooser = AutoBuilder.buildAutoChooser();
-		m_autoChooser.addOption("Blue Left 2 Cycle",  blueLeft2Cycle());
-		m_autoChooser.addOption("Blue Right 2 Cycle", blueRight2Cycle());
-		m_autoChooser.addOption("Blue Middle Go L",   singlePath("BlueMiddle_Go_L"));
-		m_autoChooser.addOption("Blue Middle Go R",   singlePath("BlueMiddle_Go_R"));
-
 		SmartDashboard.putData("AutoR", m_autoChooser);
 		SmartDashboard.putNumber("TestAimTargetAngle", 10);
 		SmartDashboard.putNumber("TestAimTargetRPM", 4000);
@@ -106,20 +94,45 @@ public class RobotContainer {
 	private void configureBindings() {
 
 		Command aimToggleCommand = Commands.run(
-				() -> m_ShooterSubsystem.aim(10),
+				() -> {
+					m_ShooterSubsystem.aim(AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.getPose()));
+					updateTowerDistanceDashboard();
+				},
 				m_ShooterSubsystem
 		).finallyDo((_interrupted) -> m_ShooterSubsystem.disable());
 
 		Command shootToggleCommand = Commands.runEnd(
 				() -> {
+
 					if (m_ShooterSubsystem.isReadyToShoot()) {
 						m_FeederSubsystem.enable();
+						m_intakeSubsystem.setPivotManual(-0.3);
+						m_intakeSubsystem.setRoller(0.2);
 					} else {
 						m_FeederSubsystem.disable();
+						m_intakeSubsystem.stopPivot();
+						m_intakeSubsystem.stopRoller();
 					}
 				},
-				m_FeederSubsystem::disable,
-				m_FeederSubsystem
+				() -> {
+					m_FeederSubsystem.disable();
+					m_intakeSubsystem.stopPivot();
+					m_intakeSubsystem.stopRoller();
+				},
+				m_FeederSubsystem,
+				m_intakeSubsystem
+		);
+
+		Command aimFieldToggleCommand = Commands.startEnd(
+				() -> {
+					m_ShooterSubsystem.setHoodAngle(20.0);
+					m_ShooterSubsystem.setShooterRPM(3200);
+				},
+				() -> {
+					m_ShooterSubsystem.disable();
+					m_FeederSubsystem.disable();
+				},
+				m_ShooterSubsystem
 		);
 
 		Command testAimToggleCommand = Commands.startEnd(
@@ -134,15 +147,61 @@ public class RobotContainer {
 				m_ShooterSubsystem
 		);
 		// Driver Controller
+
+		// Zero gyro heading on button press.
+		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
+
+		m_swerveSubsystem.setJoystickSuppliers(
+			() -> -m_driverController.getHID().getLeftY(),
+			() -> -m_driverController.getHID().getLeftX(),
+			() -> -m_driverController.getHID().getRightX()
+		);
+		m_swerveSubsystem.setDPadSuppliers(
+			() -> dPadXFromPov(m_driverController.getHID().getPOV()),
+			() -> dPadYFromPov(m_driverController.getHID().getPOV())
+		);
+
+		// Last pressed aim button wins.
+		m_driverController.L1().onTrue(Commands.runOnce(() -> {
+			setAimOverride(AimOverrideButton.L1);
+			m_intakeSubsystem.intakeOut();
+			m_ShooterSubsystem.setHoodAngle(10.0);
+		}, m_swerveSubsystem, m_intakeSubsystem));
+		m_driverController.L1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
+
+		// Publish current distance to alliance tower and draw line robot->tower on Field2d.
 		m_driverController.square().onTrue(Commands.runOnce(this::updateTowerDistanceDashboard, m_swerveSubsystem));
 
-		m_driverController.L1().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_TEAM), m_swerveSubsystem));
-		m_driverController.L1().onFalse(Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
+		m_driverController.L2().onTrue(Commands.runOnce(() -> {
+			setAimOverride(AimOverrideButton.L2);
+			m_intakeSubsystem.intakeOut();
+			m_ShooterSubsystem.setHoodAngle(10.0);
+		}, m_swerveSubsystem, m_intakeSubsystem));
+		m_driverController.L2().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
 
-		m_driverController.R1().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_HUB), m_swerveSubsystem));
-		m_driverController.R1().onFalse(Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
+		// Driver R1: tap once to aim at alliance tower, tap again to cancel.
+		m_driverController.R1().onTrue(Commands.runOnce(() -> {
+			if (m_activeAimOverrideButton == AimOverrideButton.R1) {
+				m_swerveSubsystem.setUseReducedVelocity(false);
+				clearAimOverride(AimOverrideButton.R1);
+			} else {
+				m_swerveSubsystem.setUseReducedVelocity(true);
+				setAimOverride(AimOverrideButton.R1);
+			}
+		}, m_swerveSubsystem));
+		m_driverController.R1().toggleOnTrue(aimToggleCommand);
 
-		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::resetOdometryRotation, m_swerveSubsystem));
+		m_driverController.R2().onTrue(Commands.runOnce(() -> {
+			if (m_activeAimOverrideButton == AimOverrideButton.R2) {
+				m_swerveSubsystem.setUseReducedVelocity(false);
+				clearAimOverride(AimOverrideButton.R2);
+			} else {
+				m_swerveSubsystem.setUseReducedVelocity(true);
+				setAimOverride(AimOverrideButton.R2);
+			}
+		}, m_swerveSubsystem));
+		m_driverController.R2().toggleOnTrue(aimFieldToggleCommand);
+
 
 		// Operator Controller
 		// Intake test buttons (driver controller)
@@ -176,16 +235,56 @@ public class RobotContainer {
 		// Operator R1: shoot only while held.
 		m_operatorController.R1().whileTrue(shootToggleCommand);
 
+		
+	}
 
+	private void setAimOverride(AimOverrideButton button) {
+		m_activeAimOverrideButton = button;
+		switch (button) {
+			case L1 -> {
+				m_swerveSubsystem.setUseReducedVelocity(false);
+				m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(0.0));
+			}
+			case L2 -> {
+				m_swerveSubsystem.setUseReducedVelocity(false);
+				m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(180.0));
+			}
+			case R1 -> m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance());
+			case R2 -> m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getClosestAllianceZoneTranslation(m_swerveSubsystem.getPose()));
+			case NONE -> {
+				m_swerveSubsystem.setUseFixedOmega(false);
+				m_swerveSubsystem.setUseReducedVelocity(false);
+				return;
+			}
+		}
+		m_swerveSubsystem.setUseFixedOmega(true);
+	}
+
+	private void clearAimOverride(AimOverrideButton button) {
+		if (m_activeAimOverrideButton == button) {
+			m_activeAimOverrideButton = AimOverrideButton.NONE;
+			m_swerveSubsystem.setUseFixedOmega(false);
+			m_swerveSubsystem.setUseReducedVelocity(false);
+		}
 	}
 
 	private void updateTowerDistanceDashboard() {
-		Translation2d robotTranslation = m_swerveSubsystem.swerveDrive.getPose().getTranslation();
+		Translation2d robotTranslation = m_swerveSubsystem.getPose().getTranslation();
 		Translation2d towerTranslation = AllianceTargetPoses.getTowerTranslationForCurrentAlliance();
-		double distanceMeters = AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.swerveDrive.getPose());
+		double distanceMeters = AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.getPose());
 
 		SmartDashboard.putNumber("AllianceTowerDistanceM", distanceMeters);
 		m_swerveSubsystem.setFieldLine("AllianceTowerLine", robotTranslation, towerTranslation);
+	}
+
+	private void refreshDynamicAimTargets() {
+		if (m_activeAimOverrideButton == AimOverrideButton.R1) {
+			// Keep refreshing tower target so heading keeps updating with robot pose.
+			m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance());
+		} else if (m_activeAimOverrideButton == AimOverrideButton.R2) {
+			// Keep refreshing closest alliance-zone target as robot pose changes.
+			m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getClosestAllianceZoneTranslation(m_swerveSubsystem.getPose()));
+		}
 	}
 
 	private double dPadXFromPov(int pov) {
@@ -204,90 +303,27 @@ public class RobotContainer {
 		};
 	}
 
-	private Command singlePath(String name) {
-		try {
-			return AutoBuilder.followPath(PathPlannerPath.fromChoreoTrajectory(name));
-		} catch (Exception e) {
-			DriverStation.reportError(
-				"Failed to load path: " + name + " - " + e.getMessage(),
-				e.getStackTrace());
-			return Commands.none();
-		}
-	}
-
-	/**
-	 * Blue Left 2-Cycle: Collect -> Return+Shoot -> Collect -> Return+Shoot
-	 * BlueLeft_Return ends at BlueLeft_Collect start pose.
-	 */
-	private Command blueLeft2Cycle() {
-		return Commands.sequence(
-			singlePath("BlueLeft_Collect"),
-			singlePath("BlueLeft_Return"),
-			singlePath("BlueLeft_Collect"),
-			singlePath("BlueLeft_Return")
-		);
-	}
-
-	/**
-	 * Blue Right 2-Cycle: Collect -> Return+Shoot -> Collect -> Return+Shoot
-	 * BlueRight_Return ends at BlueRight_Collect start pose.
-	 */
-	private Command blueRight2Cycle() {
-		return Commands.sequence(
-			singlePath("BlueRight_Collect"),
-			singlePath("BlueRight_Return"),
-			singlePath("BlueRight_Collect"),
-			singlePath("BlueRight_Return")
-		);
-	}
-
-	/**
-	 * Blue Middle to Left Cycle:
-	 * Middle->Left collect -> Left return+shoot -> Left collect -> Left return+shoot
-	 */
-	private Command blueMiddleToLeftCycle() {
-		return Commands.sequence(
-			singlePath("BlueMiddle_Go_L"),
-			singlePath("BlueLeft_Return"),
-			singlePath("BlueLeft_Collect"),
-			singlePath("BlueLeft_Return")
-		);
-	}
-
-	/**
-	 * Blue Middle to Right Cycle:
-	 * Middle->Right collect -> Right return+shoot -> Right collect -> Right return+shoot
-	 */
-	private Command blueMiddleToRightCycle() {
-		return Commands.sequence(
-			singlePath("BlueMiddle_Go_R"),
-			singlePath("BlueRight_Return"),
-			singlePath("BlueRight_Collect"),
-			singlePath("BlueRight_Return")
-		);
-	}
-
 	public Command getAutonomousCommand() {
 		return m_autoChooser.getSelected();
 	}
 
-
 	public void onAutonomousInit() {
-		m_swerveSubsystem.resetMode();
-		m_swerveSubsystem.setScaleInput(false);
-		leds.set(LEDState.AUTO);
-		//CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.AUTO));
+		m_swerveSubsystem.disableAutoAimNow();
+		m_swerveSubsystem.setUseReducedVelocity(false);
+		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.AUTO));
 	}
 
 	public void onTeleopInit() {
-		m_swerveSubsystem.resetMode();
-		m_swerveSubsystem.setScaleInput(false);
-		leds.set(LEDState.OFF);
-		//CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.IDLE));
+		m_swerveSubsystem.disableAutoAimNow();
+		m_swerveSubsystem.syncEstimatorHeadingToGyro();
+		m_swerveSubsystem.setUseReducedVelocity(false);
+		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.IDLE));
 	}
 
 	public Runnable dashboardLoop() {
 		return () -> {
+			refreshDynamicAimTargets();
+			m_swerveSubsystem.updateDashboard();
 		};
 	}
 }
