@@ -15,8 +15,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
+import frc.robot.commands.drive.AimSwerveCommand;
+import frc.robot.commands.drive.FeedSwerveCommand;
 import frc.robot.commands.intake.IntakeAbsorbCommand;
 import frc.robot.commands.intake.TrenchPassCommand;
+import frc.robot.commands.shooting.ActivateFeederCommand;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.SwerveSubsystem.DriveMode;
 import frc.robot.subsystems.intake.IntakeSubsystem;
@@ -86,66 +89,10 @@ public class RobotContainer {
 	}
 
 	private void configureBindings() {
-		Command aimToggleCommand = Commands.run(
-				() -> {
-					m_ShooterSubsystem.aim(AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.swerveDrive.getPose()));
-					updateTowerDistanceDashboard();
-				},
-				m_ShooterSubsystem
-		).finallyDo((_interrupted) -> m_ShooterSubsystem.disable());
-
-		Command shootToggleCommand = Commands.runEnd(
-				() -> {
-
-					if (m_ShooterSubsystem.isReadyToShoot()) {
-						m_FeederSubsystem.enable();
-						m_intakeSubsystem.setPivotManual(-0.3);
-						m_intakeSubsystem.setRoller(0.2);
-					} else {
-						m_FeederSubsystem.disable();
-						m_intakeSubsystem.stopPivot();
-						m_intakeSubsystem.stopRoller();
-					}
-				},
-				() -> {
-					m_FeederSubsystem.disable();
-					m_intakeSubsystem.stopPivot();
-					m_intakeSubsystem.stopRoller();
-				},
-				m_FeederSubsystem,
-				m_intakeSubsystem
-		);
-
-		Command aimFieldToggleCommand = Commands.startEnd(
-				() -> {
-					m_ShooterSubsystem.setHoodAngle(20.0);
-					m_ShooterSubsystem.setShooterRPM(3200);
-				},
-				() -> {
-					m_ShooterSubsystem.disable();
-					m_FeederSubsystem.disable();
-				},
-				m_ShooterSubsystem
-		);
-
-		Command testAimToggleCommand = Commands.startEnd(
-				() -> {
-					m_ShooterSubsystem.setHoodAngle(SmartDashboard.getNumber("TestAimTargetAngle", 10));
-					m_ShooterSubsystem.setShooterRPM(SmartDashboard.getNumber("TestAimTargetRPM", 4000));
-				},
-				() -> {
-					m_ShooterSubsystem.disable();
-					m_FeederSubsystem.disable();
-				},
-				m_ShooterSubsystem
-		);
-		
                 /* ---- Driver Controller ---- */
 
 		// Zero gyro heading on button press.
 		// m_driverController.options().onTrue(new ResetGyroComand(m_swerveSubsystem));
-
-                
 
 		// Last pressed aim button wins.
 		m_driverController.L1().onTrue(new IntakeAbsorbCommand(m_intakeSubsystem));
@@ -156,47 +103,35 @@ public class RobotContainer {
                 // Lower the intake for when you're on the trench
 		m_driverController.L2().onTrue(new TrenchPassCommand(m_intakeSubsystem, m_ShooterSubsystem));
 
-		// Driver R1: tap once to aim at alliance tower, tap again to cancel.
-		m_driverController.L1().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_TEAM), m_swerveSubsystem));
-		m_driverController.L1().onFalse(Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
+		// For feeding (Hold to enable)
+		m_driverController.L1().whileTrue(new FeedSwerveCommand(m_swerveSubsystem, m_ShooterSubsystem));
+                
+                // For shooting (Hold to enable)
+		m_driverController.R1().whileTrue(new AimSwerveCommand(m_swerveSubsystem));
 
-		m_driverController.R1().onTrue(Commands.runOnce(() -> m_swerveSubsystem.setMode(DriveMode.AUTO_HUB), m_swerveSubsystem));
-		m_driverController.R1().onFalse(Commands.runOnce(m_swerveSubsystem::resetMode, m_swerveSubsystem));
 
-		// Operator Controller
+		/* ---- Operator Controller ---- */
+
 		// Intake test buttons (driver controller)
 		m_operatorController.square()
 			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setRoller(1.0), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem));
 
-		m_operatorController.L2()
-			.whileTrue(Commands.startEnd(
-				() -> {
-					m_intakeSubsystem.intakeOut();
-					m_intakeSubsystem.setRoller(1.0);
-				},
-				() -> m_intakeSubsystem.stopRoller(),
-				m_intakeSubsystem
-			));
+		m_operatorController.L2().whileTrue(new IntakeAbsorbCommand(m_intakeSubsystem));
 
 		m_operatorController.triangle()
 			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-0.8), m_intakeSubsystem))
-			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotPosition(0), m_intakeSubsystem))
+			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.intakeIn(), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
-
-		m_operatorController.circle()
-			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(0.8), m_intakeSubsystem))
-			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotPosition(19), m_intakeSubsystem))
-			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
-
+                        
 		// Operator L2: press once to start aim, press again to stop aim.
 		// m_operatorController.L1().toggleOnTrue(aimToggleCommand);
 
 		// Operator R1: shoot only while held.
-		m_operatorController.R1().whileTrue(shootToggleCommand);
+		m_operatorController.R1().whileTrue(new ActivateFeederCommand(m_FeederSubsystem, m_ShooterSubsystem, false));
 	}
 
-	private void updateTowerDistanceDashboard() {
+		private void updateTowerDistanceDashboard() {
 		Translation2d robotTranslation = m_swerveSubsystem.swerveDrive.getPose().getTranslation();
 		Translation2d towerTranslation = AllianceTargetPoses.getTowerTranslationForCurrentAlliance();
 		double distanceMeters = AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.swerveDrive.getPose());

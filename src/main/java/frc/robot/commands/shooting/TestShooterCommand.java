@@ -1,4 +1,4 @@
-package frc.robot.subsystems.commands;
+package frc.robot.commands.shooting;
 
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj2.command.Command;

@@ -4,13 +4,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.shooter.FeederSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 
-public class ShootCommand extends Command {
+public class ActivateFeederCommand extends Command {
 
     private FeederSubsystem feederSubsystem;
     private ShooterSubsystem shooterSubsystem;
     private boolean bypassBlock;
 
-    public ShootCommand(FeederSubsystem feederSubsystem, ShooterSubsystem shooterSubsystem, boolean bypassBlock) {
+    public ActivateFeederCommand(FeederSubsystem feederSubsystem, ShooterSubsystem shooterSubsystem, boolean bypassBlock) {
         this.feederSubsystem = feederSubsystem;
         this.shooterSubsystem = shooterSubsystem;
         this.bypassBlock = bypassBlock;
