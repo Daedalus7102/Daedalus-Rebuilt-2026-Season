@@ -140,6 +140,19 @@ public class SwerveDrive {
         return m_poseEstimator.getEstimatedPosition().getRotation();
     }
 
+    /**
+     * Heading reference used ONLY for teleop field-relative translation.
+     *
+     * <p>On red alliance we rotate driver translation frame by 180 deg so stick
+     * directions feel the same from the driver's station perspective.
+     */
+    private Rotation2d getTeleopFieldRelativeHeading() {
+        Rotation2d heading = getControlHeading();
+        boolean isRedAlliance = DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue)
+                == DriverStation.Alliance.Red;
+        return isRedAlliance ? heading.plus(Rotation2d.fromDegrees(180.0)) : heading;
+    }
+
     // Constructor
     public SwerveDrive(Subsystem requirements) {
         m_requirements = requirements;
@@ -227,6 +240,7 @@ public class SwerveDrive {
 
         SmartDashboard.putNumber("Gyro (deg)", m_cachedRotation.getDegrees());
         SmartDashboard.putNumber("FusedHeading (deg)", getControlHeading().getDegrees());
+        SmartDashboard.putNumber("TeleopDriveHeading (deg)", getTeleopFieldRelativeHeading().getDegrees());
         SmartDashboard.putBoolean("DriverJoystick", isJoystickInputPresent());
         SmartDashboard.putBoolean("DriverDPad", isDPadInputPresent());
 
@@ -374,7 +388,7 @@ public class SwerveDrive {
     private ChassisSpeeds drive(double x, double y, double omega, boolean fieldRelative, double periodSeconds) {
         m_chassisSpeeds = ChassisSpeeds.discretize(
                 fieldRelative
-                        ? ChassisSpeeds.fromFieldRelativeSpeeds(x, y, omega, getControlHeading())
+                        ? ChassisSpeeds.fromFieldRelativeSpeeds(x, y, omega, getTeleopFieldRelativeHeading())
                         : new ChassisSpeeds(x, y, omega),
                 periodSeconds);
         return m_chassisSpeeds;
