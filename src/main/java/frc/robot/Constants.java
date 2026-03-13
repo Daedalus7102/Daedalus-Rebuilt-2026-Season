@@ -33,7 +33,8 @@ public class Constants {
 		public static final int shootMotor3ID = 25;
 		public static final int hoodMotorID = 22;
 		public static final int indexerMotorID = 21;
-		public static final int feederMotorID = 20;
+		public static final int feederMotor1ID = 20;
+		public static final int feederMotor2ID = 19;
 
 		public static final double maxHoodAngle = 30;
 		public static final double minHoodAngle = 10;

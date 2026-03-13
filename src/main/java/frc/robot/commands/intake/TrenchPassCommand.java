@@ -22,7 +22,8 @@ public class TrenchPassCommand extends Command {
     }
 
     @Override
-    public boolean isFinished() {
-        return true;
+    public void end(boolean _interrupted) {
+        shooterSubsystem.setHoodAngle(10);
+        intakeSubsystem.stopPivot();
     }
 }

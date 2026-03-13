@@ -5,12 +5,12 @@ import frc.robot.subsystems.shooter.ShooterSubsystem;
 
 import java.util.function.DoubleSupplier;
 
-public class SpoolShooter extends Command {
+public class SpoolShooterCommand extends Command {
     private final ShooterSubsystem shooter;
     
     private final DoubleSupplier distance; // para poder cambiar el distance mientras se ejecuta el comando
     
-    public SpoolShooter(ShooterSubsystem shooter, DoubleSupplier distance) {
+    public SpoolShooterCommand(ShooterSubsystem shooter, DoubleSupplier distance) {
         this.distance = distance;
         this.shooter = shooter;
         addRequirements(shooter);

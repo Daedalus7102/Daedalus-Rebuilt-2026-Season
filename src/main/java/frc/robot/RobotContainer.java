@@ -20,6 +20,7 @@ import frc.robot.commands.drive.FeedSwerveCommand;
 import frc.robot.commands.intake.IntakeAbsorbCommand;
 import frc.robot.commands.intake.TrenchPassCommand;
 import frc.robot.commands.shooting.ActivateFeederCommand;
+import frc.robot.commands.shooting.SpoolShooterCommand;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.SwerveSubsystem.DriveMode;
 import frc.robot.subsystems.intake.IntakeSubsystem;
@@ -56,8 +57,8 @@ public class RobotContainer {
 	public RobotContainer() {
 		NamedCommands.registerCommand("nothing", Commands.sequence());
                 
-                // Intake
-                NamedCommands.registerCommand("DeployIntake",
+		// Intake
+		NamedCommands.registerCommand("DeployIntake",
 			Commands.runOnce(m_intakeSubsystem::intakeOut, m_intakeSubsystem));
 		NamedCommands.registerCommand("StartRollers",
 			Commands.runOnce(() -> m_intakeSubsystem.setRoller(1.0), m_intakeSubsystem));
@@ -94,20 +95,17 @@ public class RobotContainer {
 		// Zero gyro heading on button press.
 		// m_driverController.options().onTrue(new ResetGyroComand(m_swerveSubsystem));
 
-		// Last pressed aim button wins.
-		m_driverController.L1().onTrue(new IntakeAbsorbCommand(m_intakeSubsystem));
-
 		// Publish current distance to alliance tower and draw line robot->tower on Field2d.
-		m_driverController.square().onTrue(Commands.runOnce(this::updateTowerDistanceDashboard, m_swerveSubsystem));
+		// m_driverController.square().onTrue(Commands.runOnce(this::updateTowerDistanceDashboard, m_swerveSubsystem));
 
-                // Lower the intake for when you're on the trench
-		m_driverController.L2().onTrue(new TrenchPassCommand(m_intakeSubsystem, m_ShooterSubsystem));
+		// Lower the intake for when you're on the trench
+		m_driverController.cross().whileTrue(new TrenchPassCommand(m_intakeSubsystem, m_ShooterSubsystem));
 
 		// For feeding (Hold to enable)
-		m_driverController.L1().whileTrue(new FeedSwerveCommand(m_swerveSubsystem, m_ShooterSubsystem));
+		m_driverController.L2().whileTrue(new FeedSwerveCommand(m_swerveSubsystem, m_ShooterSubsystem));
                 
-                // For shooting (Hold to enable)
-		m_driverController.R1().whileTrue(new AimSwerveCommand(m_swerveSubsystem));
+		// For shooting (Hold to enable)
+		m_driverController.R2().whileTrue(new AimSwerveCommand(m_swerveSubsystem));
 
 
 		/* ---- Operator Controller ---- */
@@ -119,7 +117,7 @@ public class RobotContainer {
 
 		m_operatorController.L2().whileTrue(new IntakeAbsorbCommand(m_intakeSubsystem));
 
-		m_operatorController.triangle()
+		m_operatorController.L1()
 			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-0.8), m_intakeSubsystem))
 			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.intakeIn(), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
@@ -128,10 +126,12 @@ public class RobotContainer {
 		// m_operatorController.L1().toggleOnTrue(aimToggleCommand);
 
 		// Operator R1: shoot only while held.
-		m_operatorController.R1().whileTrue(new ActivateFeederCommand(m_FeederSubsystem, m_ShooterSubsystem, false));
+		m_operatorController.cross().whileTrue(new ActivateFeederCommand(m_FeederSubsystem, m_ShooterSubsystem, false));
+		m_operatorController.R2().whileTrue(
+				new SpoolShooterCommand(m_ShooterSubsystem, () -> AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.swerveDrive.getPose())));
 	}
 
-		private void updateTowerDistanceDashboard() {
+	private void updateTowerDistanceDashboard() {
 		Translation2d robotTranslation = m_swerveSubsystem.swerveDrive.getPose().getTranslation();
 		Translation2d towerTranslation = AllianceTargetPoses.getTowerTranslationForCurrentAlliance();
 		double distanceMeters = AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.swerveDrive.getPose());
