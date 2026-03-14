@@ -1,0 +1,86 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "DeployIntake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "start_L"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "go trench L"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StartRollers"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Eat_L"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "StartRollers"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopRollers"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Munch_L"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "go_back_trench"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "shoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AimAndShoot"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}
