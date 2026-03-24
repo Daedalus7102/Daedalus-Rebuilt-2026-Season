@@ -9,6 +9,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -44,6 +45,8 @@ public class RobotContainer {
 	// Example field point to aim at
 	private static final double kReducedDriveScale = 0.30;
 	private AimOverrideButton m_activeAimOverrideButton = AimOverrideButton.NONE;
+	private final Timer m_shootIntakeToggleTimer = new Timer();
+	private boolean m_shootIntakeOut = true;
 
 	// Autonomous
 	private SendableChooser<Command> m_autoChooser;
@@ -101,27 +104,40 @@ public class RobotContainer {
 				m_ShooterSubsystem
 		).finallyDo((_interrupted) -> m_ShooterSubsystem.disable());
 
-		Command shootToggleCommand = Commands.runEnd(
+		Command shootToggleCommand = Commands.run(
 				() -> {
-
 					if (m_ShooterSubsystem.isReadyToShoot()) {
+						if (m_shootIntakeToggleTimer.advanceIfElapsed(1)) {
+							m_shootIntakeOut = !m_shootIntakeOut;
+						}
+
+						if (m_shootIntakeOut) {
+							m_intakeSubsystem.intakeOut();
+						} else {
+							m_intakeSubsystem.intakeIn();
+						}
 						m_FeederSubsystem.enable();
-						m_intakeSubsystem.setPivotManual(-0.3);
 						m_intakeSubsystem.setRoller(0.2);
 					} else {
 						m_FeederSubsystem.disable();
-						m_intakeSubsystem.stopPivot();
 						m_intakeSubsystem.stopRoller();
+						m_intakeSubsystem.stopPivot();
 					}
-				},
-				() -> {
-					m_FeederSubsystem.disable();
-					m_intakeSubsystem.stopPivot();
-					m_intakeSubsystem.stopRoller();
 				},
 				m_FeederSubsystem,
 				m_intakeSubsystem
-		);
+		)
+		.beforeStarting(() -> {
+			m_shootIntakeOut = true;
+			m_shootIntakeToggleTimer.restart();
+			m_intakeSubsystem.intakeOut();
+		})
+		.finallyDo((_interrupted) -> {
+			m_shootIntakeToggleTimer.stop();
+			m_FeederSubsystem.disable();
+			m_intakeSubsystem.stopRoller();
+			m_intakeSubsystem.intakeIn();
+		});
 
 		Command aimFieldToggleCommand = Commands.startEnd(
 				() -> {
@@ -152,8 +168,8 @@ public class RobotContainer {
 		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
 
 		m_swerveSubsystem.setJoystickSuppliers(
-			() -> -m_driverController.getHID().getLeftY(),
-			() -> -m_driverController.getHID().getLeftX(),
+			() -> applyAllianceTeleopTranslationFlip(-m_driverController.getHID().getLeftY()),
+			() -> applyAllianceTeleopTranslationFlip(-m_driverController.getHID().getLeftX()),
 			() -> -m_driverController.getHID().getRightX()
 		);
 		m_swerveSubsystem.setDPadSuppliers(
@@ -240,14 +256,15 @@ public class RobotContainer {
 
 	private void setAimOverride(AimOverrideButton button) {
 		m_activeAimOverrideButton = button;
+		boolean isRedAlliance = AllianceTargetPoses.isCurrentAllianceRed();
 		switch (button) {
 			case L1 -> {
 				m_swerveSubsystem.setUseReducedVelocity(false);
-				m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(0.0));
+				m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(isRedAlliance ? 180.0 : 0.0));
 			}
 			case L2 -> {
 				m_swerveSubsystem.setUseReducedVelocity(false);
-				m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(180.0));
+				m_swerveSubsystem.driveFacingAngle(Rotation2d.fromDegrees(isRedAlliance ? 0.0 : 180.0));
 			}
 			case R1 -> m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance());
 			case R2 -> m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getClosestAllianceZoneTranslation(m_swerveSubsystem.getPose()));
@@ -295,6 +312,17 @@ public class RobotContainer {
 		};
 	}
 
+	/**
+	 * Driver-centric teleop convention:
+	 * keep "push away from driver station" feeling consistent across alliances.
+	 *
+	 * <p>For red, field frame is mirrored from the driver's perspective,
+	 * so translation inputs are flipped. Rotation input is intentionally unchanged.
+	 */
+	private double applyAllianceTeleopTranslationFlip(double value) {
+		return AllianceTargetPoses.isCurrentAllianceRed() ? -value : value;
+	}
+
 	private double dPadYFromPov(int pov) {
 		return switch (pov) {
 			case 315, 270, 225 -> 1.0;
@@ -307,7 +335,15 @@ public class RobotContainer {
 		return m_autoChooser.getSelected();
 	}
 
+	private void applyAllianceStartHeading() {
+		Rotation2d startHeading = AllianceTargetPoses.isCurrentAllianceRed()
+				? Rotation2d.fromDegrees(180.0)
+				: new Rotation2d();
+		m_swerveSubsystem.setGyroHeading(startHeading);
+	}
+
 	public void onAutonomousInit() {
+		applyAllianceStartHeading();
 		m_swerveSubsystem.disableAutoAimNow();
 		m_swerveSubsystem.setUseReducedVelocity(false);
 		CommandScheduler.getInstance().schedule(m_swerveSubsystem.setState(SwerveDriveState.AUTO));
@@ -322,6 +358,8 @@ public class RobotContainer {
 
 	public Runnable dashboardLoop() {
 		return () -> {
+			SmartDashboard.putBoolean("AllianceIsRed", AllianceTargetPoses.isCurrentAllianceRed());
+			SmartDashboard.putBoolean("TeleopTranslationFlippedForRed", AllianceTargetPoses.isCurrentAllianceRed());
 			refreshDynamicAimTargets();
 			m_swerveSubsystem.updateDashboard();
 		};

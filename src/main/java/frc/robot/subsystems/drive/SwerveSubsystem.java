@@ -61,6 +61,10 @@ public class SwerveSubsystem extends SubsystemBase {
         m_drive.zeroGyro();
     }
 
+    public void setGyroHeading(Rotation2d heading) {
+        m_drive.setGyroHeading(heading);
+    }
+
     /** Re-sync estimator heading to gyro while preserving translation. */
     public void syncEstimatorHeadingToGyro() {
         m_drive.syncEstimatorHeadingToGyro();

@@ -459,14 +459,22 @@ public class SwerveDrive {
 
     /** Zeroes yaw while preserving current field translation in the pose estimator. */
     public void zeroGyro() {
-        m_gyro.reset();
+        setGyroHeading(new Rotation2d());
+    }
+
+    /**
+     * Sets gyro yaw to an absolute heading while preserving current field translation
+     * in the pose estimator.
+     */
+    public void setGyroHeading(Rotation2d heading) {
+        m_gyro.setYaw(heading.getDegrees());
         m_cachedRotation = m_gyro.getRotation2d();
         Pose2d currentPose = m_poseEstimator.getEstimatedPosition();
         readSwerveModulePositions();
         m_poseEstimator.resetPosition(
                 m_cachedRotation,
                 m_cachedPositions,
-                new Pose2d(currentPose.getTranslation(), new Rotation2d()));
+                new Pose2d(currentPose.getTranslation(), m_cachedRotation));
         m_headingController.reset();
         m_lastAimOmega = 0.0;
     }
