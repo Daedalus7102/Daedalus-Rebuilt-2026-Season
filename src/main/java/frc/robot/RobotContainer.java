@@ -19,7 +19,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.subsystems.drive.SwerveDrive.SwerveDriveState;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
-import frc.robot.subsystems.shooter.FeederSubsystem;
+import frc.robot.subsystems.shooter.FeedexerSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.tools.AllianceTargetPoses;
 
@@ -40,7 +40,7 @@ public class RobotContainer {
 	private final SwerveSubsystem m_swerveSubsystem = new SwerveSubsystem();
 	private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
 	private final ShooterSubsystem m_ShooterSubsystem = new ShooterSubsystem();
-	private final FeederSubsystem m_FeederSubsystem = new FeederSubsystem();
+	private final FeedexerSubsystem m_FeedexerSubsystem = new FeedexerSubsystem();
 
 	// Example field point to aim at
 	private static final double kReducedDriveScale = 0.30;
@@ -62,21 +62,21 @@ public class RobotContainer {
 							m_ShooterSubsystem.aim(AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.getPose()));
 
 							if (m_ShooterSubsystem.isReadyToShoot()) {
-								m_FeederSubsystem.enable();
+								m_FeedexerSubsystem.enable();
 								m_intakeSubsystem.setPivotManual(-0.3);
 								m_intakeSubsystem.setRoller(0.2);
 							} else {
-								m_FeederSubsystem.disable();
+								m_FeedexerSubsystem.disable();
 								m_intakeSubsystem.stopPivot();
 								m_intakeSubsystem.stopRoller();
 							}
 						},
 						m_ShooterSubsystem,
-						m_FeederSubsystem,
+						m_FeedexerSubsystem,
 						m_intakeSubsystem
 				).withTimeout(15.0)
 		).finallyDo((_interrupted) -> {
-			m_FeederSubsystem.disable();
+			m_FeedexerSubsystem.disable();
 			m_intakeSubsystem.stopPivot();
 			m_intakeSubsystem.stopRoller();
 			m_ShooterSubsystem.disable();
@@ -116,15 +116,15 @@ public class RobotContainer {
 						} else {
 							m_intakeSubsystem.intakeIn();
 						}
-						m_FeederSubsystem.enable();
+						m_FeedexerSubsystem.enable();
 						m_intakeSubsystem.setRoller(0.2);
 					} else {
-						m_FeederSubsystem.disable();
+						m_FeedexerSubsystem.disable();
 						m_intakeSubsystem.stopRoller();
 						m_intakeSubsystem.stopPivot();
 					}
 				},
-				m_FeederSubsystem,
+				m_FeedexerSubsystem,
 				m_intakeSubsystem
 		)
 		.beforeStarting(() -> {
@@ -134,19 +134,19 @@ public class RobotContainer {
 		})
 		.finallyDo((_interrupted) -> {
 			m_shootIntakeToggleTimer.stop();
-			m_FeederSubsystem.disable();
+			m_FeedexerSubsystem.disable();
 			m_intakeSubsystem.stopRoller();
 			m_intakeSubsystem.intakeIn();
 		});
 
 		Command aimFieldToggleCommand = Commands.startEnd(
 				() -> {
-					m_ShooterSubsystem.setHoodAngle(20.0);
-					m_ShooterSubsystem.setShooterRPM(3200);
+					m_ShooterSubsystem.setHoodAngle(15.0);
+					m_ShooterSubsystem.setShooterRPM(6000);
 				},
 				() -> {
 					m_ShooterSubsystem.disable();
-					m_FeederSubsystem.disable();
+					m_FeedexerSubsystem.disable();
 				},
 				m_ShooterSubsystem
 		);
@@ -158,7 +158,7 @@ public class RobotContainer {
 				},
 				() -> {
 					m_ShooterSubsystem.disable();
-					m_FeederSubsystem.disable();
+					m_FeedexerSubsystem.disable();
 				},
 				m_ShooterSubsystem
 		);

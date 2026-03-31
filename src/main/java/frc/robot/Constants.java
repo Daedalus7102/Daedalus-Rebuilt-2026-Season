@@ -104,12 +104,13 @@ public class Constants {
     }
 
     public static class ShooterConstants {
-		public static final int shootMotor1ID = 23;
-		public static final int shootMotor2ID = 24;
-		public static final int shootMotor3ID = 25;
-		public static final int hoodMotorID = 22;
-		public static final int indexerMotorID = 21;
-		public static final int feederMotorID = 20;
+		public static final int shootMotor1ID = 22;
+		public static final int shootMotor2ID = 23;
+		public static final int hoodMotorID = 24;
+		public static final int feedexerPrimaryMotorID = 20;
+		public static final int feedexerSecondaryMotorID = 21;
+		public static final boolean feedexerPrimaryInverted = false;
+		public static final boolean feedexerSecondaryInverted = true;
 
 		public static final double maxHoodAngle = 30;
 		public static final double minHoodAngle = 10;
@@ -142,9 +143,8 @@ public class Constants {
 		public static final double shooterMinRPM = 3000;
         public static final double unclogRPM = -4000;
 
-        // Feeder & Indexer
-        public static final double feederSpeed = 1.0;
-        public static final double indexerSpeed = 1.0;
+		// Feedexer
+		public static final double feedexerSpeed = 1.0;
 
 		public static final double feedingShooterRPM = shooterTargetRPM;
         public static final double feedingHoodAngle = 0;

@@ -6,23 +6,23 @@ public class LookUpTable {
 	}
 
 	public static DataPoint[] table = {
-			new DataPoint(2.38, 3490, 10),
-			new DataPoint(2.61, 3600, 10),
-			new DataPoint(2.79, 3650, 10),
-			new DataPoint(2.97, 3700, 10),
-			new DataPoint(3.22, 3750, 10.6),
-			new DataPoint(3.38, 3800, 10.6),
-			new DataPoint(3.61, 3820, 10.6),
-			new DataPoint(3.83, 3860, 10.6),
-			new DataPoint(4.1, 3950, 10.6),
-			new DataPoint(4.2, 3930, 11),
-			new DataPoint(4.41, 4050, 11),
-			new DataPoint(4.61, 4180, 11),
-			new DataPoint(4.825, 4270, 11),
-			new DataPoint(5.03, 4350, 11),
-			new DataPoint(5.21, 4430, 11),
-			new DataPoint(5.51, 4480, 11),
-			new DataPoint(5.81, 4550, 11)
+			new DataPoint(2.38, 5990, 10),
+			new DataPoint(2.61, 6100, 10),
+			new DataPoint(2.79, 6150, 10),
+			new DataPoint(2.97, 6200, 10),
+			new DataPoint(3.22, 6250, 10.6),
+			new DataPoint(3.38, 6300, 10.6),
+			new DataPoint(3.61, 6320, 10.6),
+			new DataPoint(3.83, 6360, 10.6),
+			new DataPoint(4.1, 6450, 10.6),
+			new DataPoint(4.2, 6430, 11),
+			new DataPoint(4.41, 6550, 11),
+			new DataPoint(4.61, 6680, 11),
+			new DataPoint(4.825, 6770, 11),
+			new DataPoint(5.03, 6850, 11),
+			new DataPoint(5.21, 6930, 11),
+			new DataPoint(5.51, 6980, 11),
+			new DataPoint(5.81, 7050, 11)
 	};
 
 	/**

@@ -18,12 +18,10 @@ import frc.robot.Constants.ShooterConstants;
 public class ShooterSubsystem extends SubsystemBase {
 	private final SparkFlex shooterMotor1;
 	private final SparkFlex shooterMotor2;
-	private final SparkFlex shooterMotor3;
 	private final SparkFlex hoodMotor;
 
 	private final SparkFlexConfig shooterMotorConfig1;
 	private final SparkFlexConfig shooterMotorConfig2;
-	private final SparkFlexConfig shooterMotorConfig3;
 	private final SparkFlexConfig hoodMotorConfig;
 
 	private final AbsoluteEncoder hoodEncoder;
@@ -31,19 +29,15 @@ public class ShooterSubsystem extends SubsystemBase {
 	public ShooterSubsystem() {
 		shooterMotor1 = new SparkFlex(ShooterConstants.shootMotor1ID, SparkLowLevel.MotorType.kBrushless);
 		shooterMotor2 = new SparkFlex(ShooterConstants.shootMotor2ID, SparkLowLevel.MotorType.kBrushless);
-		shooterMotor3 = new SparkFlex(ShooterConstants.shootMotor3ID, SparkLowLevel.MotorType.kBrushless);
 
 		shooterMotorConfig1 = new SparkFlexConfig();
 		shooterMotorConfig2 = new SparkFlexConfig();
-		shooterMotorConfig3 = new SparkFlexConfig();
 
 		applyShooterMotorConfig(shooterMotorConfig1, true);
 		applyShooterMotorConfig(shooterMotorConfig2, false);
-		applyShooterMotorConfig(shooterMotorConfig3, false);
 
 		shooterMotor1.configure(shooterMotorConfig1, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 		shooterMotor2.configure(shooterMotorConfig2, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-		shooterMotor3.configure(shooterMotorConfig3, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
 		hoodMotor = new SparkFlex(ShooterConstants.hoodMotorID, SparkLowLevel.MotorType.kBrushless);
 		hoodMotorConfig = new SparkFlexConfig();
@@ -69,7 +63,6 @@ public class ShooterSubsystem extends SubsystemBase {
 	public void disable() {
 		shooterMotor1.stopMotor();
 		shooterMotor2.stopMotor();
-		shooterMotor3.stopMotor();
 
 		hoodMotor.getClosedLoopController().setSetpoint(ShooterConstants.minHoodAngle, ControlType.kPosition);
 	}
@@ -77,7 +70,6 @@ public class ShooterSubsystem extends SubsystemBase {
 	public void unclog() {
 		shooterMotor1.getClosedLoopController().setSetpoint(ShooterConstants.unclogRPM, ControlType.kVelocity);
 		shooterMotor2.getClosedLoopController().setSetpoint(ShooterConstants.unclogRPM, ControlType.kVelocity);
-		shooterMotor3.getClosedLoopController().setSetpoint(ShooterConstants.unclogRPM, ControlType.kVelocity);
 	}
 
 	public void setShooterRPM(double rpm) {
@@ -85,7 +77,6 @@ public class ShooterSubsystem extends SubsystemBase {
 		double clampedRPM = Math.max(0.0, safeRPM);
 		shooterMotor1.getClosedLoopController().setSetpoint(clampedRPM, ControlType.kVelocity);
 		shooterMotor2.getClosedLoopController().setSetpoint(clampedRPM, ControlType.kVelocity);
-		shooterMotor3.getClosedLoopController().setSetpoint(clampedRPM, ControlType.kVelocity);
 	}
 
 	public void setMeasuredRPM(double distance) {
@@ -97,8 +88,7 @@ public class ShooterSubsystem extends SubsystemBase {
 	public double getShooterRPM() {
 		double rpm1 = Math.abs(shooterMotor1.getEncoder().getVelocity());
 		double rpm2 = Math.abs(shooterMotor2.getEncoder().getVelocity());
-		double rpm3 = Math.abs(shooterMotor3.getEncoder().getVelocity());
-		return (rpm1 + rpm2 + rpm3) / 3.0;
+		return (rpm1 + rpm2) / 2.0;
 	}
 
 	public boolean isAtTargetRPM(double toleranceRPM) {
@@ -148,8 +138,6 @@ public class ShooterSubsystem extends SubsystemBase {
 		SmartDashboard.putNumber("Shooter1TargetRPM", shooterMotor1.getClosedLoopController().getSetpoint());
 		SmartDashboard.putNumber("Shooter2RPM", shooterMotor2.getEncoder().getVelocity());
 		SmartDashboard.putNumber("Shooter2TargetRPM", shooterMotor2.getClosedLoopController().getSetpoint());
-		SmartDashboard.putNumber("Shooter3RPM", shooterMotor3.getEncoder().getVelocity());
-		SmartDashboard.putNumber("Shooter3TargetRPM", shooterMotor3.getClosedLoopController().getSetpoint());
 
 		SmartDashboard.putBoolean("ShooterAtSpeed", isAtTargetRPM(ShooterConstants.shooterReadyToleranceRPM));
 		SmartDashboard.putBoolean("HoodAtTarget", isAtHoodTarget(ShooterConstants.hoodReadyToleranceDeg));
