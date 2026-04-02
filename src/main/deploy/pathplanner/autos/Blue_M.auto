@@ -1,0 +1,97 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B-Mid_to_L"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeOut"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "start"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "go_to_balls"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "RollerOn"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "eat_balls"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "go_back_balls"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "RollerOff"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeIn"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "pasar_trench_R"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeOut"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "set_up"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "shoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AimAndShoot"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

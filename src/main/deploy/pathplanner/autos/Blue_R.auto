@@ -1,0 +1,91 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeOut"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B_start_R"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B_approach_R"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "RollerOn"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B_collect_R"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B_Return_R"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "RollerOff"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeIn"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B_BackTrench_R"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeOut"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B_SetUp_R"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B_Shoot_R"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AimAndShoot"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

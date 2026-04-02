@@ -21,6 +21,9 @@ import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.shooter.FeedexerSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.camera.Vision;
+import frc.robot.subsystems.led.LEDController;
+import frc.robot.subsystems.led.LEDState;
 import frc.robot.tools.AllianceTargetPoses;
 
 public class RobotContainer {
@@ -41,6 +44,12 @@ public class RobotContainer {
 	private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
 	private final ShooterSubsystem m_ShooterSubsystem = new ShooterSubsystem();
 	private final FeedexerSubsystem m_FeedexerSubsystem = new FeedexerSubsystem();
+	private final Vision m_vision = new Vision(m_swerveSubsystem);
+
+	// LED
+	private final LEDController m_ledController = new LEDController();
+	private boolean m_isIntaking = false;
+	private boolean m_isShooting = false;
 
 	// Example field point to aim at
 	private static final double kReducedDriveScale = 0.30;
@@ -54,7 +63,23 @@ public class RobotContainer {
 	public RobotContainer() {
 		NamedCommands.registerCommand("nothing", Commands.sequence(
 		));
-		// Autonomous event markers: explicit field-based aiming helpers.
+		NamedCommands.registerCommand("IntakeOut", Commands.runOnce(
+			() -> m_intakeSubsystem.intakeOut(),
+			m_intakeSubsystem
+		));
+		NamedCommands.registerCommand("IntakeIn", Commands.runOnce(
+			() -> m_intakeSubsystem.intakeIn(),
+			m_intakeSubsystem
+		));
+		NamedCommands.registerCommand("RollerOn", Commands.runOnce(
+			() -> m_intakeSubsystem.setRoller(1.0),
+			m_intakeSubsystem
+		));
+		NamedCommands.registerCommand("RollerOff", Commands.runOnce(
+			() -> m_intakeSubsystem.stopRoller(),
+			m_intakeSubsystem
+		));
+
 		NamedCommands.registerCommand("AimAndShoot", Commands.sequence(
 				m_swerveSubsystem.enableAutoAimAtPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance()),
 				Commands.run(
@@ -83,9 +108,8 @@ public class RobotContainer {
 			m_swerveSubsystem.disableAutoAimNow();
 		}));
 
-
 		m_swerveSubsystem.setReducedVelocityScale(kReducedDriveScale);
-		
+
 		configureBindings();
 
 		m_autoChooser = AutoBuilder.buildAutoChooser();
@@ -110,7 +134,6 @@ public class RobotContainer {
 						if (m_shootIntakeToggleTimer.advanceIfElapsed(1)) {
 							m_shootIntakeOut = !m_shootIntakeOut;
 						}
-
 						if (m_shootIntakeOut) {
 							m_intakeSubsystem.intakeOut();
 						} else {
@@ -162,9 +185,8 @@ public class RobotContainer {
 				},
 				m_ShooterSubsystem
 		);
-		// Driver Controller
 
-		// Zero gyro heading on button press.
+		// Driver Controller
 		m_driverController.options().onTrue(Commands.runOnce(m_swerveSubsystem::zeroGyro, m_swerveSubsystem));
 
 		m_swerveSubsystem.setJoystickSuppliers(
@@ -177,7 +199,6 @@ public class RobotContainer {
 			() -> dPadYFromPov(m_driverController.getHID().getPOV())
 		);
 
-		// Last pressed aim button wins.
 		m_driverController.L1().onTrue(Commands.runOnce(() -> {
 			setAimOverride(AimOverrideButton.L1);
 			m_intakeSubsystem.intakeOut();
@@ -185,7 +206,6 @@ public class RobotContainer {
 		}, m_swerveSubsystem, m_intakeSubsystem));
 		m_driverController.L1().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L1), m_swerveSubsystem));
 
-		// Publish current distance to alliance tower and draw line robot->tower on Field2d.
 		m_driverController.square().onTrue(Commands.runOnce(this::updateTowerDistanceDashboard, m_swerveSubsystem));
 
 		m_driverController.L2().onTrue(Commands.runOnce(() -> {
@@ -195,7 +215,6 @@ public class RobotContainer {
 		}, m_swerveSubsystem, m_intakeSubsystem));
 		m_driverController.L2().onFalse(Commands.runOnce(() -> clearAimOverride(AimOverrideButton.L2), m_swerveSubsystem));
 
-		// Driver R1: tap once to aim at alliance tower, tap again to cancel.
 		m_driverController.R1().onTrue(Commands.runOnce(() -> {
 			if (m_activeAimOverrideButton == AimOverrideButton.R1) {
 				m_swerveSubsystem.setUseReducedVelocity(false);
@@ -218,40 +237,67 @@ public class RobotContainer {
 		}, m_swerveSubsystem));
 		m_driverController.R2().toggleOnTrue(aimFieldToggleCommand);
 
-
 		// Operator Controller
-		// Intake test buttons (driver controller)
 		m_operatorController.square()
 			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setRoller(1.0), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopRoller(), m_intakeSubsystem));
 
+		// L2 — intake with LED tracking
 		m_operatorController.L2()
 			.whileTrue(Commands.startEnd(
 				() -> {
 					m_intakeSubsystem.intakeOut();
 					m_intakeSubsystem.setRoller(1.0);
+					m_isIntaking = true;          // LED flag ON
 				},
-				() -> m_intakeSubsystem.stopRoller(),
+				() -> {
+					m_intakeSubsystem.stopRoller();
+					m_isIntaking = false;          // LED flag OFF
+				},
 				m_intakeSubsystem
 			));
 
 		m_operatorController.triangle()
-			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(-0.8), m_intakeSubsystem))
 			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotPosition(0), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
 
 		m_operatorController.circle()
-			// .toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotManual(0.8), m_intakeSubsystem))
 			.toggleOnTrue(Commands.runOnce(() -> m_intakeSubsystem.setPivotPosition(19), m_intakeSubsystem))
 			.toggleOnFalse(Commands.runOnce(() -> m_intakeSubsystem.stopPivot(), m_intakeSubsystem));
 
-		// Operator L2: press once to start aim, press again to stop aim.
-		// m_operatorController.L1().toggleOnTrue(aimToggleCommand);
+		// R1 — shoot with LED tracking
+		m_operatorController.R1()
+			.onTrue(Commands.runOnce(() -> m_isShooting = true))   // LED flag ON
+			.onFalse(Commands.runOnce(() -> m_isShooting = false))  // LED flag OFF
+			.whileTrue(shootToggleCommand);
+	}
 
-		// Operator R1: shoot only while held.
-		m_operatorController.R1().whileTrue(shootToggleCommand);
-
-		
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// LED UPDATE — called from Robot.java robotPeriodic()
+	// Does NOT affect any subsystem logic
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	public void updateLEDs(boolean isAuto, boolean isEndgame) {
+		if (isAuto) {
+			m_ledController.set(LEDState.AUTO);
+			return;
+		}
+		if (isEndgame) {
+			m_ledController.set(LEDState.ENDGAME);
+			return;
+		}
+		if (m_isShooting) {
+			double targetRPM = m_ShooterSubsystem.getTargetRPM();
+			double currentRPM = m_ShooterSubsystem.getShooterRPM();
+			int rpmPercent = targetRPM > 0
+				? (int) Math.min(100, (currentRPM / targetRPM) * 100)
+				: 0;
+			boolean hasTarget = m_vision.hasAprilTagTarget();
+			m_ledController.set(LEDState.SHOOT, rpmPercent, hasTarget);
+		} else if (m_isIntaking) {
+			m_ledController.set(LEDState.INTAKE);
+		} else {
+			m_ledController.set(LEDState.TELEOP);
+		}
 	}
 
 	private void setAimOverride(AimOverrideButton button) {
@@ -296,10 +342,8 @@ public class RobotContainer {
 
 	private void refreshDynamicAimTargets() {
 		if (m_activeAimOverrideButton == AimOverrideButton.R1) {
-			// Keep refreshing tower target so heading keeps updating with robot pose.
 			m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getTowerTranslationForCurrentAlliance());
 		} else if (m_activeAimOverrideButton == AimOverrideButton.R2) {
-			// Keep refreshing closest alliance-zone target as robot pose changes.
 			m_swerveSubsystem.driveFacingPoint(AllianceTargetPoses.getClosestAllianceZoneTranslation(m_swerveSubsystem.getPose()));
 		}
 	}
@@ -312,13 +356,6 @@ public class RobotContainer {
 		};
 	}
 
-	/**
-	 * Driver-centric teleop convention:
-	 * keep "push away from driver station" feeling consistent across alliances.
-	 *
-	 * <p>For red, field frame is mirrored from the driver's perspective,
-	 * so translation inputs are flipped. Rotation input is intentionally unchanged.
-	 */
 	private double applyAllianceTeleopTranslationFlip(double value) {
 		return AllianceTargetPoses.isCurrentAllianceRed() ? -value : value;
 	}

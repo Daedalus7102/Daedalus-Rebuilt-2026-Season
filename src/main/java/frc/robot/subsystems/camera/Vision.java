@@ -13,8 +13,8 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -119,6 +119,14 @@ public class Vision {
         public String getName() {
             return m_name;
         }
+
+        // ── Added for LED system ──
+        public boolean hasTargets() {
+            for (PhotonPipelineResult result : getResults()) {
+                if (result.hasTargets()) return true;
+            }
+            return false;
+        }
     }
 
     private final Camera[] m_cameras = {
@@ -138,6 +146,14 @@ public class Vision {
 
     public Vision(SwerveSubsystem swerveSubsystem) {
         m_swerveSubsystem = swerveSubsystem;
+    }
+
+    // ── Added for LED system — checks if any camera sees an april tag ──
+    public boolean hasAprilTagTarget() {
+        for (Camera camera : m_cameras) {
+            if (camera.hasTargets()) return true;
+        }
+        return false;
     }
 
     public void updatePose() {
