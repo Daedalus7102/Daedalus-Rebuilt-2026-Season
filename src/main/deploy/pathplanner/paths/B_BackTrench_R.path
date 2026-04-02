@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.592732349537037,
-        "y": 1.2164371383101855
+        "x": 6.570687210648149,
+        "y": 1.3851874276620366
       },
       "isLocked": false,
       "linkedName": null
@@ -20,8 +20,8 @@
         "y": 0.5954990596064818
       },
       "prevControl": {
-        "x": 6.461380063657408,
-        "y": 0.657304181134259
+        "x": 6.455868778935186,
+        "y": 0.6790868778935191
       },
       "nextControl": null,
       "isLocked": false,
@@ -33,8 +33,8 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 3.6,
-    "maxAcceleration": 0.6,
+    "maxVelocity": 4.0,
+    "maxAcceleration": 0.8,
     "maxAngularVelocity": 270.0,
     "maxAngularAcceleration": 8.6,
     "nominalVoltage": 12.0,
@@ -42,7 +42,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 179.86498333146832
+    "rotation": 0.5868760637571057
   },
   "reversed": false,
   "folder": "blue_izquieda",

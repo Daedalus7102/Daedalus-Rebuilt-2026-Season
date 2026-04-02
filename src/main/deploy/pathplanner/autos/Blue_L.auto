@@ -23,22 +23,15 @@
           }
         },
         {
-          "type": "parallel",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "RollerOn"
-                }
-              },
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "eat_balls"
-                }
-              }
-            ]
+            "name": "RollerOn"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "eat_balls"
           }
         },
         {

@@ -11,8 +11,8 @@
     "red_mid"
   ],
   "autoFolders": [],
-  "defaultMaxVel": 3.6,
-  "defaultMaxAccel": 0.6,
+  "defaultMaxVel": 4.0,
+  "defaultMaxAccel": 0.8,
   "defaultMaxAngVel": 270.0,
   "defaultMaxAngAccel": 8.6,
   "defaultNominalVoltage": 12.0,
