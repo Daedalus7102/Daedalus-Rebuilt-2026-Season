@@ -120,6 +120,19 @@ public class RobotContainer {
 
 	private void configureBindings() {
 
+		// demos/ninos tontos
+		m_operatorController.cross().toggleOnTrue(
+				Commands.runOnce(() -> {
+					m_swerveSubsystem.setUseReducedVelocity(true);
+					SmartDashboard.putBoolean("ReducedSpeedMode", true);
+				}, m_swerveSubsystem)
+		).toggleOnFalse(
+				Commands.runOnce(() -> {
+					m_swerveSubsystem.setUseReducedVelocity(false);
+					SmartDashboard.putBoolean("ReducedSpeedMode", false);
+				}, m_swerveSubsystem)
+		);
+
 		Command aimToggleCommand = Commands.run(
 				() -> {
 					m_ShooterSubsystem.aim(AllianceTargetPoses.getDistanceToTower(m_swerveSubsystem.getPose()));
